@@ -2,11 +2,19 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { components } from "@/types/api";
 import { config } from "process";
 import { error } from "console";
+import { request } from "http";
+import { data } from "motion/react-client";
 
 
 export type TelegramUserIn = components["schemas"]["TelegramUserIn"]
 
 type SafeMethod = 'get' | 'head' | 'options';
+
+interface isUserAuth {
+    authenticated: boolean,
+    role?: "owner" | "customer" | null,
+    user_id?: number | null
+}
 
 const api = axios.create({
     baseURL: "http://127.0.0.1:8000/api/core",
@@ -84,6 +92,18 @@ export const authApi = {
         const { data, status } = await api.post<TelegramUserIn>("/register", userData);
         console.log(status);
         return data;
+    },
+
+    authCheck: async (): Promise<isUserAuth> => {
+        try {
+            const { data, status } = await api.get<isUserAuth>("/me");
+            console.log("Статус авторизации:", status);
+            return data;
+        } catch (error) {
+            console.log("401 - Unauthorized", error);
+            // Возвращаем дефолтный объект, чтобы фронтенд не падал
+            return { authenticated: false, role: null, user_id: null };
+        }
     }
 }
 
