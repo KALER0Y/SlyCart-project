@@ -21,7 +21,6 @@
 ![Docker](https://img.shields.io/badge/Docker-blue?style=flat&logo=Docker&logoColor=lightblue)
 ![Git](https://img.shields.io/badge/Git-blue?style=flat&logo=Git&logoColor=lightblue)
 
-
 ## 🏗 Ключевые архитектурные решения
 * **Telegram-Native Auth:** Регистрация и идентификация пользователей по `tg_id`.
 * **SaaS Logic:** Реализована сущность "Владелец" (Owner), позволяющая мерчантам управлять своими брендами и точками продаж.
