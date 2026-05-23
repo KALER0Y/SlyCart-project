@@ -1,15 +1,28 @@
+import os
 import uuid
+from django.http import JsonResponse
 from ninja import Router, File
+from ninja.errors import HttpError
 from ninja.pagination import paginate
 from ninja.files import UploadedFile
 from typing import List
 from django.shortcuts import get_object_or_404
-from ninja_jwt.authentication import JWTAuth
-from django.contrib.auth import login 
+from django.contrib.auth import login
+from ninja_jwt.tokens import RefreshToken 
 
 from .exceptions import NegativePriceError
+from .utils import set_auth_cookie
 from .models import OwnerProfile, Product, Shop
-from .services import create_user, create_shop, create_product
+from .services import (
+    create_user, 
+    create_shop,
+    create_product,
+    UserAlreadyExistsError, 
+    PhoneNumberAlreadyTakenError, 
+    BrandAlreadyTakenError, 
+    EmptyPhoneNumberError, 
+    InvalidRoleError
+    )
 from .schemas import (
     TelegramUserOut, 
     TelegramUserIn,
@@ -22,23 +35,46 @@ from .schemas import (
 
 core_router = Router()
 
+DEBUG = os.getenv("DEBUG", "False") == "True" 
 # Эндпоинты (Endpoints) — это, по сути, «адреса», 
 # по которым твой фронтенд (или Telegram-бот) будет обращаться к твоему бэкенду за данными.
 
 @core_router.post("/register", response=TelegramUserOut, tags=["POST"]) # Что то похожее на эндпоинт
 def create_user_endpoint(request, data: TelegramUserIn): # Что будет принимать функция
+    try:
+        user = create_user(
+            telegram_id=data.user_id,
+            role=data.role,
+            phone_number=data.phone_number,
+            inn=data.inn,
+            brand_name=data.brand_name,
+            )
+        
+    except (UserAlreadyExistsError, PhoneNumberAlreadyTakenError, BrandAlreadyTakenError) as e:
+        raise HttpError(400, str(e))
+    except (EmptyPhoneNumberError, InvalidRoleError) as e:
+        raise HttpError(422, str(e))
+        
+    refresh = RefreshToken.for_user(user)
+    csrf_token = str(uuid.uuid4()) # Лучше перевести в string
+    # Пример: response.set_cookie(key="csrf_token", value=csrf_token, httponly=False)
+    # Сервер кладет в куки случайную строку. 
+    # Важно: httponly=False. 
+    # Это значит, что твой React-код может прочитать эту куку. 
+    # Левый сайт (сайт с котиками) прочитать куки другого домена не может из-за политики безопасности браузеров (SOP).
 
-    user = create_user(
-        telegram_id=data.user_id,
-        role=data.role,
-        phone_number=data.phone_number,
-        inn=data.inn,
-        brand_name=data.brand_name,
+    response = JsonResponse({
+        "user_id": user.user_id,
+        "detail": "Successfully authenticated"
+    }, status=201)
+
+    return set_auth_cookie(
+        response=response, 
+        access_token=str(refresh.access_token), # Превращаем в строку здесь
+        refresh_token=str(refresh),
+        csrf_token=csrf_token, 
+        debug_status=DEBUG
         )
-    
-    login(request, user)
-
-    return user
     
 
 @core_router.post('/shop', response=ShopOut, tags=["POST"])
@@ -140,7 +176,7 @@ def jwt_token_auth(request):
             "role": request.user.role,
             "user_id": request.user.user_id,
         }
-    return {"authenticated": False} 
+    raise HttpError(401, "Unauthorized")
 
 # Когда в Django Ninja срабатывает встроенная магия login(request, user), 
 # бэкенд намертво связывает сессию с конкретным объектом твоей модели TelegramUser.

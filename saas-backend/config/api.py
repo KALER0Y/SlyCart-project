@@ -6,6 +6,7 @@ import os
 
 from ninja_extra import NinjaExtraAPI, api_controller, http_post
 from core.api import core_router
+from core.utils import set_auth_cookie
 from ninja.renderers import JSONRenderer
 from core.exceptions import UserAlreadyExistsError, PhoneNumberAlreadyTakenError
 from ninja.responses import NinjaJSONEncoder
@@ -66,6 +67,7 @@ class MyTokenController:
         # Метод to_response_schema теперь содержит всю логику поиска и генерации
         auth_data = user_token.to_response_schema() # Получаем токен
 
+        
         csrf_token = str(uuid.uuid4()) # Лучше перевести в string
         # Пример: response.set_cookie(key="csrf_token", value=csrf_token, httponly=False)
         # Сервер кладет в куки случайную строку. 
@@ -78,35 +80,15 @@ class MyTokenController:
             "detail": "Successfully authenticated"
         })
 
-        # Запекаем Access токен
-        response.set_cookie(
-            key="access",
-            value=auth_data["access"],
-            httponly=True, # Защита от XSS атака(межсайтовый код). Такие куки автоматически прикрепляются к браузеру
-            secure=not DEBUG,
-            samesite="Lax", # Защита от CSRF-атак(только на базовом уровне)
-            max_age=60 * 60
-        )
-        # Запекаем Refresh token
-        response.set_cookie(
-            key='refresh',
-            value=auth_data["refresh"],
-            httponly=True,
-            secure=not DEBUG, # Не могу через https, потому что нет SSL-сертификата
-            samesite='Lax',
-            max_age=60 * 60 * 24 * 7 # 7 дней
-        )
-        # Запекаем CSRF-токен
-        response.set_cookie(
-            key="csrf_token",
-            value=csrf_token,
-            httponly=False, # Здесь должен быть False, потому что фронту нужно будет его прочитать
-            secure=not DEBUG,
-            samesite="Lax",
-            max_age=60 * 60 * 24
-        )
 
-        return response
+        return set_auth_cookie(
+            response=response, 
+            access_token=auth_data["access"], 
+            refresh_token=auth_data["refresh"], 
+            csrf_token=csrf_token, 
+            debug_status=DEBUG
+            )
+
 
 api.add_router("/core/", core_router)
 api.register_controllers(MyTokenController)
