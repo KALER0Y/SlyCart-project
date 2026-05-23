@@ -19,7 +19,7 @@ def set_auth_cookie(response,  access_token: str, refresh_token: str, csrf_token
         value=refresh_token,
         httponly=True,
         secure=not debug_status,
-        samesite="Lax",
+        samesite="Lax", 
         max_age=REFRESH_MAX_AGE,
     )
     # Запекаем CSRF-токен (он должен жить столько же сколько и refresh)
