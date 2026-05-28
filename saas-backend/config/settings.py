@@ -135,7 +135,14 @@ MEDIA_URL = "/media/"
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False # Запрещаем доступ всем подряд
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000" # Адрес фронтенда
+] 
+
+# Разрешаем куки
+CORS_ALLOW_CREDENTIALS = True
 
 AUTH_USER_MODEL = 'core.TelegramUser'
 
