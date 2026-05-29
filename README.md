@@ -3,7 +3,7 @@
 ## 🛠 Tech Stack
 
 ### 🖥️ Backend & API
-![PythonN](https://img.shields.io/badge/Python-brightgreen?style=flat&logo=python)
+![Python](https://img.shields.io/badge/Python-brightgreen?style=flat&logo=python)
 ![Django](https://img.shields.io/badge/Django-brightgreen?style=flat&logo=django)
 ![Django Ninja](https://img.shields.io/badge/Django_ninja-brightgreen?style=flat&logo=django)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-brightgreen?style=flat&logo=postgresql&logoColor=blue)
