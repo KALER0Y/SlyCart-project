@@ -15,7 +15,8 @@ class TelegramUserManager(BaseUserManager):
         if password:
             user.set_password(password)
         else:
-            user.set_unusable_password() # Обычным юзерам пароль не нужен
+            user.set_unusable_password() # Обычным юзерам пароль не нужен. 
+            # Джанго поставит им невалидный хэш и защитит от подбора пароля
             
         user.save(using=self._db)
         return user
