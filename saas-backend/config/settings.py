@@ -86,13 +86,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'saas_db',
-        'USER': 'postgres',
-        'PASSWORD': 'gaymaster',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'NAME': env.str('DB_NAME', default='crm_database'),
+        'USER': env.str('DB_USER', default='crm_user'),
+        'PASSWORD': env.str('DB_PASSWORD', default='crm_password_2026'),
+        'HOST': env.str('DB_HOST', default='127.0.0.1'),
+        'PORT': env.str('DB_PORT', default='5432'),
     }
 }
+
 
 
 # Password validation
