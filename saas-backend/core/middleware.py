@@ -33,8 +33,6 @@ class CSRFTokenMiddleware:
                     },
                     status=403
                 )
-        # Code to be executed for each request/response after
-        # the view is called.
 
         # Если всё ок или метод безопасный (GET) — идем дальше
         return self.get_response(request)
