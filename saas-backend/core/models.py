@@ -159,6 +159,7 @@ class OwnerProfile(models.Model):
     brand_name = models.CharField(max_length=120,
                                   null=True,
                                   blank=True,
+                                  unique=True,
                                   verbose_name="Название бренда")
     
     phone = PhoneNumberField(verbose_name="Номер телефона", 
@@ -170,6 +171,7 @@ class OwnerProfile(models.Model):
     owner_inn = models.CharField(verbose_name="Инн владельца",
                                  max_length=12,
                                  null=True,
+                                 unique=True,
                                  blank=True)
     
     def clean(self):
