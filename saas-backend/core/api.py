@@ -1,6 +1,6 @@
 import os
 import uuid
-from django.http import JsonResponse
+from django.http import HttpResponse
 from ninja import Router, File
 from ninja.errors import HttpError
 from ninja.pagination import paginate
@@ -39,8 +39,8 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 # Эндпоинты (Endpoints) — это, по сути, «адреса», 
 # по которым твой фронтенд (или Telegram-бот) будет обращаться к твоему бэкенду за данными.
 
-@core_router.post("/register", response=TelegramUserOut, tags=["POST"]) # Что то похожее на эндпоинт
-def create_user_endpoint(request, data: TelegramUserIn): # Что будет принимать функция
+@core_router.post("/register", response={201: TelegramUserOut}, tags=["POST"]) # Что то похожее на эндпоинт
+def create_user_endpoint(request, data: TelegramUserIn, response: HttpResponse): # Что будет принимать функция
     try:
         user = create_user(
             telegram_id=data.user_id,
@@ -63,18 +63,16 @@ def create_user_endpoint(request, data: TelegramUserIn): # Что будет п�
     # Это значит, что твой React-код может прочитать эту куку. 
     # Левый сайт (сайт с котиками) прочитать куки другого домена не может из-за политики безопасности браузеров (SOP).
 
-    response = JsonResponse({
-        "user_id": user.user_id,
-        "detail": "Successfully authenticated"
-    }, status=201)
-
-    return set_auth_cookie(
+    # Эта функция будет ложить куки в HttpResponse автоматически
+    set_auth_cookie(
         response=response, 
         access_token=str(refresh.access_token), # Превращаем в строку здесь
         refresh_token=str(refresh),
         csrf_token=csrf_token, 
         debug_status=DEBUG
         )
+
+    return user
     
 
 @core_router.post('/shop', response=ShopOut, tags=["POST"])
