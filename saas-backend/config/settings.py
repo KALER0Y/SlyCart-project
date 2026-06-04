@@ -139,7 +139,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 CORS_ALLOW_ALL_ORIGINS = False # Запрещаем доступ всем подряд
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000" # Адрес фронтенда
+    "http://localhost:3000",
+    "http://127.0.0.1:3000", # Адрес фронтенда
 ] 
 
 # Разрешаем куки
