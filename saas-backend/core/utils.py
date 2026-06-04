@@ -12,6 +12,7 @@ def set_auth_cookie(response,  access_token: str, refresh_token: str, csrf_token
         secure=not debug_status,
         samesite="Lax",     # Защита от CSRF-атак(только на базовом уровне)
         max_age=60 * 60,
+        path="/"
     )
     # Запекаем Refresh токен
     response.set_cookie(
@@ -21,6 +22,7 @@ def set_auth_cookie(response,  access_token: str, refresh_token: str, csrf_token
         secure=not debug_status,
         samesite="Lax", 
         max_age=REFRESH_MAX_AGE,
+        path="/"
     )
     # Запекаем CSRF-токен (он должен жить столько же сколько и refresh)
     response.set_cookie(
@@ -30,4 +32,7 @@ def set_auth_cookie(response,  access_token: str, refresh_token: str, csrf_token
         secure=not debug_status,
         samesite="Lax",
         max_age=REFRESH_MAX_AGE,
+        path="/"
     )
+
+    
