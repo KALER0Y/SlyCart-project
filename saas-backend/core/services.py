@@ -245,7 +245,7 @@ def create_customer_profile(user: TelegramUser, phone_number: str) -> CustomerPr
         
 def create_owner_profile(user: TelegramUser, 
                          inn: str, 
-                         brand_name: str, 
+                         brand_name: str | None = None, 
                          tariff: Tariff = None, 
                          phone_number: str = None) -> OwnerProfile:
     """
@@ -256,7 +256,7 @@ def create_owner_profile(user: TelegramUser,
         if OwnerProfile.objects.filter(phone=phone_number).exists():
             raise PhoneNumberAlreadyTakenError("Такой номер телефона уже существует!")
         
-        if OwnerProfile.objects.filter(brand_name=brand_name).exists():
+        if brand_name and OwnerProfile.objects.filter(brand_name=brand_name).exists():
             raise BrandAlreadyTakenError("Этот бренд уже занят!")
 
         owner_tariff = tariff
