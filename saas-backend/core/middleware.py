@@ -17,7 +17,7 @@ class CSRFTokenMiddleware:
         if request.method in ("POST", "PUT", "DELETE", "PATCH"):
             
             # Пропускаем ручку авторизации (там токена еще нет)
-            if request.path.endswith("/auth/pair"):
+            if request.path.endswith("/api/core/register"):
                 return self.get_response(request)
 
             # 2. Достаем токены
