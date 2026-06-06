@@ -94,16 +94,9 @@ export const authApi = {
         return data;
     },
 
-    authCheck: async (): Promise<isUserAuth> => {
-        try {
-            const { data, status } = await api.get<isUserAuth>("/me");
-            console.log("Статус авторизации:", status);
-            return data;
-        } catch (error) {
-            console.log("401 - Unauthorized", error);
-            // Возвращаем дефолтный объект, чтобы фронтенд не падал
-            return { authenticated: false, role: null, user_id: null };
-        }
+    authCheck: async () => {
+        const { data } = await axios.get<isUserAuth>("/me");
+        return data;
     }
 }
 
