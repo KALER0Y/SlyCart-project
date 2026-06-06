@@ -2,7 +2,7 @@
 import { PatternFormat } from 'react-number-format';
 import { motion, AnimatePresence, number } from 'framer-motion';
 import { useState, useEffect, memo } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { authApi } from '@/lib/api';
@@ -109,6 +109,14 @@ export default function Register() {
     const [phone, setPhone] = useState('');
     const [telegramId, setTelegramId] = useState('');
     const [isSubmitted, setSubmitted] = useState<boolean>(false);
+
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ["query-user"], // Уникальный ключ по которому будут кешироватся данные
+        queryFn: authApi.authCheck, // Функция которую мы будем запускать
+        retry: false // Не будем повторять при ошибке чтобы не спамить backend
+    })
+
+    // Делаем useEffect
 
     const { mutate, isPending } = useMutation({
         mutationFn: authApi.register,
