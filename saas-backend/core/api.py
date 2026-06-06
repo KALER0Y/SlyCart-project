@@ -9,6 +9,7 @@ from typing import List
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import login
 from ninja_jwt.tokens import RefreshToken 
+from config.api import CookieJWTAuth
 
 from .exceptions import NegativePriceError
 from .utils import set_auth_cookie
@@ -166,15 +167,17 @@ def delete_product_endpoint(request, product_id: int, owner_id: int):
 
     return 204, None
 
-@core_router.get("/me", tags=["Auth"])
+cookie_auth = CookieJWTAuth()
+
+@core_router.get("/me", auth=cookie_auth, tags=["Auth"])
 def jwt_token_auth(request):
-    if request.user.is_authenticated:
-        return {
-            "authenticated": True,
-            "role": request.user.role,
-            "user_id": request.user.user_id,
-        }
-    raise HttpError(401, "Unauthorized")
+        
+    return {
+        "authenticated": True,
+        "role": request.user.role,
+        "user_id": request.user.user_id,
+    }
+  
 
 # Когда в Django Ninja срабатывает встроенная магия login(request, user), 
 # бэкенд намертво связывает сессию с конкретным объектом твоей модели TelegramUser.
