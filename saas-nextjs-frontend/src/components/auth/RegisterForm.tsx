@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { authApi } from '@/lib/api';
 import { RegisterSuccess } from './RegisterSuccess';
+import { useRouter } from 'next/navigation';
 
 
 // --- ТИПИЗАЦИЯ ---
@@ -103,6 +104,8 @@ export function ModeToggle() {
 
 // --- ОСНОВНОЙ ЭКРАН ---
 export default function Register() {
+    // Router
+    const router = useRouter();
 
     const [role, setRole] = useState<Role>(null);
     const [isConfirmed, setIsConfirmed] = useState<boolean>(false);
@@ -110,13 +113,18 @@ export default function Register() {
     const [telegramId, setTelegramId] = useState('');
     const [isSubmitted, setSubmitted] = useState<boolean>(false);
 
-    const { data, isLoading, isError } = useQuery({
+    const { data, isLoading, isError, isSuccess } = useQuery({
         queryKey: ["query-user"], // Уникальный ключ по которому будут кешироватся данные
         queryFn: authApi.authCheck, // Функция которую мы будем запускать
         retry: false // Не будем повторять при ошибке чтобы не спамить backend
     })
 
     // Делаем useEffect
+    useEffect(() => {
+        if (isSuccess){
+            router.push("/profile")
+        } 
+    }, [isSuccess, router])
 
     const { mutate, isPending } = useMutation({
         mutationFn: authApi.register,
@@ -156,6 +164,8 @@ export default function Register() {
         return <RegisterSuccess />;
     };
 
+    const isGuest: boolean = !isLoading && !isSuccess;
+
     return (
         <div className="relative flex h-screen w-full items-center justify-center bg-background overflow-hidden">
 
@@ -170,9 +180,27 @@ export default function Register() {
 
             <div className="relative z-10 w-full flex justify-center px-4">
                 <AnimatePresence mode='wait' initial={false}>
+                    {/* STEP 0: Loading screen */}
+                    {/* 
+                    isSuccess я вставил для того чтобы когда все было окей с авторизацией
+                    не вылезала карточка с выбором роли и переход был бесшовным(строка 125)
+                    */}
+                    {(isLoading || isSuccess) && (
+                        <motion.div
+                            key="step-loading"
+                            className="flex h-115 w-125 flex-col items-center justify-center rounded-[2.5rem] bg-card p-12 shadow-2xl border border-border"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1.05 }}
+                            transition={springTransition}
+                            >
+                                <div className="text-6xl mb-4 animate-bounce">⏳</div>
+                                <p className="text-muted-foreground font-semibold animate-pulse">Проверка сессии...</p>
+                        </motion.div>
+                    )}
 
                     {/* STEP 1: CHOICE */}
-                    {!role && (
+                    {isGuest && !role && (
                         <motion.div
                             key="step-1"
                             className="flex h-115 w-125 flex-col items-center rounded-[2.5rem] bg-card/80 backdrop-blur-xl p-12 shadow-2xl border border-border"
@@ -192,7 +220,7 @@ export default function Register() {
                     )}
 
                     {/* STEP 2: CONFIRM */}
-                    {role && !isConfirmed && (
+                    {isGuest && role && !isConfirmed && (
                         <motion.div
                             key="step-2"
                             className="flex h-115 w-125 flex-col items-center justify-center rounded-[2.5rem] bg-card p-12 shadow-2xl border border-border"
@@ -218,7 +246,7 @@ export default function Register() {
                     )}
 
                     {/* STEP 3: FORM */}
-                    {isConfirmed && (
+                    {isGuest && isConfirmed && (
                         <motion.div
                             key="step-3"
                             className="flex h-115 w-125 flex-col items-center rounded-[2.5rem] bg-card p-10 shadow-2xl border border-border"
@@ -237,7 +265,7 @@ export default function Register() {
                                     type="number"
                                     value={telegramId}
                                     onChange={(e) => setTelegramId(e.target.value)}
-                                    // e - событие, target - цель(input), value - значение(всегда string!!)
+                                    /* e - событие, target - цель(input), value - значение(всегда string!!) */
                                     placeholder="Ваш Телеграм ID"
                                     className="w-full p-4 bg-secondary/50 border border-border rounded-xl outline-none focus:ring-2 ring-blue-500/20"
                                 />
