@@ -70,30 +70,6 @@ def user_already_exists_handler(request, exc):
             },
         status=400
     )
-
-# Дорабатываем класс Cookie под себя с помощью наследования.
-# APIKeyCookie как робот - может делать 90 процентов работы, но он не знает что именно мне надо
-class CookieJWTAuth(APIKeyCookie):
-    param_name = "access" 
-
-    def authenticate(self, request, key):
-        # key - то что нашел "робот" в нашей куки. Это наш access токен в виде строки
-        try:
-            # 1. Передайте токен (переменную key) в класс AccessToken, чтобы расшифровать его.
-            # Назовите результат, например, access_token.
-            access_token = AccessToken(token=key)
-            
-            # 2. Достаньте ID пользователя из расшифрованного токена.
-            user_id = access_token["user_id"]
-
-            # 3. Найдите в базе данных пользователя TelegramUser по его user_id
-            user = TelegramUser.objects.get(user_id=user_id)
-            
-            # 4. Верните найденного пользователя (return user).
-            return user
-        except (TokenError, TelegramUser.DoesNotExist):
-            # Если токен невалидный или юзера нет в базе — возвращаем None
-            return None
         
 
 @api_controller('/auth', tags=['Auth']) # Обязательно через декоратор!

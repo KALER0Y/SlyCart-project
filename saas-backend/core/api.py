@@ -8,8 +8,10 @@ from ninja.files import UploadedFile
 from typing import List
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import login
-from ninja_jwt.tokens import RefreshToken 
-from config.api import CookieJWTAuth
+
+from ninja_jwt.tokens import RefreshToken, AccessToken
+from ninja_jwt.exceptions import TokenError
+from ninja.security import APIKeyCookie
 
 from .exceptions import NegativePriceError
 from .utils import set_auth_cookie
@@ -121,7 +123,8 @@ def list_my_shops_endpoint(request, user_id: int):
 @core_router.get('/shops/{shop_id}/products', response=List[ProductOut], tags=["GET"])
 def product_list_endpoint(request, shop_id: uuid.UUID):
     # ninja легче работать напрямую через QuerySet, чем через переменные. Переменные могут вызывать ошибки
-    return Product.objects.filter(shop=shop_id, is_active=True).select_related('shop') 
+    return Product.objects.filter(shop=shop_id, is_active=True)
+    # removed .select_related('shop') as ProductOut now uses shop_id directly, avoiding extra JOIN/query
 
 
 @core_router.patch("/product/{product_id}", response=ProductOut, tags=["PATCH"])
@@ -153,6 +156,32 @@ def list_products_endpoint(request):
     return Product.objects.all()
 
 # @core_router.get("/products/{shop_name}", tags=["GET"])
+
+# Дорабатываем класс Cookie под себя с помощью наследования.
+# APIKeyCookie как робот - может делать 90 процентов работы, но он не знает что именно мне надо
+class CookieJWTAuth(APIKeyCookie):
+    param_name = "access"
+
+    def authenticate(self, request, key):
+        # key - то что нашел "робот" в нашей куки. Это наш access токен в виде строки
+        from .models import TelegramUser
+        try:
+            # 1. Передайте токен (переменную key) в класс AccessToken, чтобы расшифровать его.
+            # Назовите результат, например, access_token.
+            access_token = AccessToken(token=key)
+
+            # 2. Достаньте ID пользователя из расшифрованного токена.
+            user_id = access_token["user_id"]
+
+            # 3. Найдите в базе данных пользователя TelegramUser по его user_id
+            user = TelegramUser.objects.get(user_id=user_id)
+
+            # 4. Верните найденного пользователя (return user).
+            return user
+        except (TokenError, TelegramUser.DoesNotExist):
+            # Если токен невалидный или юзера нет в базе — возвращаем None
+            return None
+        
 
 @core_router.delete("/product/{product_id}", response={204: None}, tags=["DELETE"])
 def delete_product_endpoint(request, product_id: int, owner_id: int):
