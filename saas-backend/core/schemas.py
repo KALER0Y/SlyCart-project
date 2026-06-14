@@ -61,7 +61,8 @@ class ProductOut(ModelSchema):
 
     price: Decimal = Field(..., max_digits=12, decimal_places=2, json_schema_extra={"example": "0.00"})
 
-    shop_id: uuid.UUID = Field(..., alias="shop.id")
+    shop_id: uuid.UUID = Field(..., alias="shop_id")
+    # Always prefer `alias="field_id"` over `alias="field.id"` in schemas when only the ID is needed.
 
     class Meta:
         model = Product
