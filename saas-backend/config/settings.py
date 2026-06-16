@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 from environs import Env
+from datetime import timedelta
+
 
 env: Env = Env()
 env.read_env()
@@ -153,3 +155,8 @@ AUTH_USER_MODEL = 'core.TelegramUser'
 # а на реальном сервере (Production) защита включалась автоматически.
 CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=not DEBUG)
 SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
+
+NINJA_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
