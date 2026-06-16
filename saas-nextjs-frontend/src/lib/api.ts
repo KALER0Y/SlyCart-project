@@ -95,7 +95,7 @@ export const authApi = {
     },
 
     authCheck: async () => {
-        const { data } = await axios.get<isUserAuth>("/me");
+        const { data } = await api.get<isUserAuth>("/me");
         return data;
     }
 }
