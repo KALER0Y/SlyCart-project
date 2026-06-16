@@ -9,9 +9,13 @@ from typing import List
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import login
 
+# Импортируем нужные классы из библиотеки ninja_jwt
+# Класс выше(AccessToken) содержит в себе всю сложную математику криптографии для расшифроки и проверки секретного ключа
 from ninja_jwt.tokens import RefreshToken, AccessToken
+# Класс TokenError будет выскакивать если ключ подделан или просрочен
 from ninja_jwt.exceptions import TokenError
-from ninja.security import APIKeyCookie
+# Этот класс работает с безопасностью кук. Автоматически парсит заголовки браузера и ищет там куки
+from ninja.security import APIKeyCookie 
 
 from .exceptions import NegativePriceError
 from .utils import set_auth_cookie
@@ -157,30 +161,6 @@ def list_products_endpoint(request):
 
 # @core_router.get("/products/{shop_name}", tags=["GET"])
 
-# Дорабатываем класс Cookie под себя с помощью наследования.
-# APIKeyCookie как робот - может делать 90 процентов работы, но он не знает что именно мне надо
-class CookieJWTAuth(APIKeyCookie):
-    param_name = "access"
-
-    def authenticate(self, request, key):
-        # key - то что нашел "робот" в нашей куки. Это наш access токен в виде строки
-        from .models import TelegramUser
-        try:
-            # 1. Передайте токен (переменную key) в класс AccessToken, чтобы расшифровать его.
-            # Назовите результат, например, access_token.
-            access_token = AccessToken(token=key)
-
-            # 2. Достаньте ID пользователя из расшифрованного токена.
-            user_id = access_token["user_id"]
-
-            # 3. Найдите в базе данных пользователя TelegramUser по его user_id
-            user = TelegramUser.objects.get(user_id=user_id)
-
-            # 4. Верните найденного пользователя (return user).
-            return user
-        except (TokenError, TelegramUser.DoesNotExist):
-            # Если токен невалидный или юзера нет в базе — возвращаем None
-            return None
         
 
 @core_router.delete("/product/{product_id}", response={204: None}, tags=["DELETE"])
@@ -196,6 +176,37 @@ def delete_product_endpoint(request, product_id: int, owner_id: int):
 
     return 204, None
 
+# Дорабатываем класс Cookie под себя с помощью наследования.
+# APIKeyCookie как робот - может делать 90 процентов работы, но он не знает что именно мне надо
+class CookieJWTAuth(APIKeyCookie):
+    param_name = "access"
+
+    def authenticate(self, request, key):
+        # key - то что нашел "робот" в нашей куки. Это наш access токен в виде строки
+        from .models import TelegramUser
+        try:
+            # 1. Передайть токен (переменную key) в класс AccessToken, чтобы расшифровать его.
+            # Назвать результат, например, access_token.
+            access_token = AccessToken(token=key)
+
+            # 2. Достать ID пользователя из расшифрованного токена.
+            user_id = access_token["user_id"]
+
+            # 3. Найти в базе данных пользователя TelegramUser по его user_id
+            user = TelegramUser.objects.get(id=user_id)
+
+            # 4. Вернуть найденного пользователя (return user).
+            return user
+        
+        except (TokenError, TelegramUser.DoesNotExist):
+            return None
+
+        except Exception as e:
+            import traceback
+            print("❌ --- ОШИБКА ВНУТРИ AUTHENTICATE --- ❌")
+            traceback.print_exc() # Распечатает подробную трассировку ошибки в терминал
+            return None
+        
 cookie_auth = CookieJWTAuth()
 
 @core_router.get("/me", auth=cookie_auth, tags=["Auth"])
@@ -203,11 +214,11 @@ def jwt_token_auth(request):
         
     return {
         "authenticated": True,
-        "role": request.user.role,
-        "user_id": request.user.user_id,
+        "role": request.auth.role, # auth вместо user, потому что в user лежит AnonymousUser без данных
+        "user_id": request.auth.user_id,
     }
-  
 
+  
 # Когда в Django Ninja срабатывает встроенная магия login(request, user), 
 # бэкенд намертво связывает сессию с конкретным объектом твоей модели TelegramUser.
 # При каждом следующем запросе (например, когда Next.js стучится на эндпоинт /me), 
