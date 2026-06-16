@@ -8,16 +8,6 @@ from ninja_extra import NinjaExtraAPI, api_controller, http_post
 from core.api import core_router
 from core.utils import set_auth_cookie
 
-# Этот класс работает с безопасностью кук. Автоматически парсит заголовки браузера и ищет там куки
-from ninja.security import APIKeyCookie 
-
-# Импортируем нужные классы из библиотеки ninja_jwt
-from ninja_jwt.tokens import AccessToken
-# Класс выше(AccessToken) содержит в себе всю сложную математику криптографии для расшифроки и проверки секретного ключа
-from ninja_jwt.exceptions import TokenError
-# Класс TokenError будет выскакивать если ключ подделан или просрочен
-
-from core.models import TelegramUser 
 from ninja.renderers import JSONRenderer
 from core.exceptions import UserAlreadyExistsError, PhoneNumberAlreadyTakenError
 from ninja.responses import NinjaJSONEncoder
