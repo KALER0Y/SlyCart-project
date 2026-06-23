@@ -92,7 +92,7 @@ DATABASES = {
         'USER': env.str('DB_USER', default='crm_user'),
         'PASSWORD': env.str('DB_PASSWORD', default='crm_password_2026'),
         'HOST': env.str('DB_HOST', default='127.0.0.1'),
-        'PORT': env.str('DB_PORT', default='5432'),
+        'PORT': env.str('DB_PORT', default='5433'),
     }
 }
 
@@ -159,4 +159,29 @@ SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
 NINJA_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
+LOGGING = {
+    "version": 1,  # the dictConfig format version
+    "disable_existing_loggers": False,  # retain the default loggers
+    "loggers": {
+        "core.services":{
+            "level": "INFO",
+            "handlers": ['file'],
+        }
+    },
+    "handlers" : {
+        'file':{
+            "class": "logging.FileHandler",
+            "filename": "general.log",
+            "formatter": 'verbose',
+            "encoding": "utf-8"
+        }
+    },
+    "formatters": {
+        "verbose": {
+            "format": "File: {name} | {levelname} | {asctime} ===> {message}",
+            "style": "{",
+        },
+    },
 }

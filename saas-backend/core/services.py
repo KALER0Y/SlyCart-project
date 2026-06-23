@@ -1,3 +1,5 @@
+import logging
+
 from decimal import Decimal
 from typing import List
 from ninja.files import UploadedFile
@@ -32,6 +34,8 @@ from .models import (
     Shop,
     ProductImage
 )
+
+logger = logging.getLogger(__name__)
 
 
 class OrderStatus(models.TextChoices):
@@ -203,6 +207,8 @@ def create_user(telegram_id: int,
       
       with transaction.atomic():
 
+        logger.info("Началось создание пользователя")
+
         if role not in ProfileRole.values:
             raise InvalidRoleError("Такой роли не существует!")
         
@@ -224,6 +230,7 @@ def create_user(telegram_id: int,
         else:
             create_customer_profile(user=tg_user, phone_number=phone_number)
 
+        logger.info(f"Пользователь {tg_user.user_id} с ролью {tg_user.get_role_display()} успешно создан!")
         return tg_user
 
 def create_customer_profile(user: TelegramUser, phone_number: str) -> CustomerProfile:
@@ -231,6 +238,7 @@ def create_customer_profile(user: TelegramUser, phone_number: str) -> CustomerPr
     Создает профиль покупателя
     """
     with transaction.atomic():
+        logger.info("Создание профиля покупателя")
 
         if not phone_number: 
             raise EmptyPhoneNumberError("Для покупателя номер телефона обязателен")
@@ -252,6 +260,7 @@ def create_owner_profile(user: TelegramUser,
     Создает профиль продавца
     """
     with transaction.atomic():
+        logger.info("Создание профиля продавца")
 
         if OwnerProfile.objects.filter(phone=phone_number).exists():
             raise PhoneNumberAlreadyTakenError("Такой номер телефона уже существует!")
