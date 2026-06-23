@@ -120,7 +120,7 @@ export default function Register() {
     // Делаем useEffect
     useEffect(() => {
         if (isSuccess){
-            router.push("/profile")
+            router.push("/profile/owner")
         } 
     }, [isSuccess, router])
 
