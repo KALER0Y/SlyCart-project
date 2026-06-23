@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from django.http import HttpResponse
 from ninja import Router, File
 from ninja.errors import HttpError
@@ -39,6 +40,8 @@ from .schemas import (
     ProductOut,
     ProductPatch
     )
+
+logger = logging.getLogger(__name__)
 
 core_router = Router()
 
