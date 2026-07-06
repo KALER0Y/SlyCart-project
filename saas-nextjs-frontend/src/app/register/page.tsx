@@ -1,10 +1,11 @@
 "use client"
 import { PatternFormat } from 'react-number-format';
-import { motion, AnimatePresence, number } from 'framer-motion';
+import { motion, AnimatePresence} from 'framer-motion';
 import { useState, useEffect, memo } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -120,7 +121,7 @@ export default function Register() {
     // Делаем useEffect
     useEffect(() => {
         if (isSuccess){
-            router.push("/profile/owner")
+            router.push("/profile/" + data.role)
         } 
     }, [isSuccess, router])
 
@@ -182,14 +183,20 @@ export default function Register() {
                     {(isLoading || isSuccess) && (
                         <motion.div
                             key="step-loading"
-                            className="flex h-115 w-125 flex-col items-center justify-center rounded-[2.5rem] bg-card p-12 shadow-2xl border border-border"
+                            className="flex h-115 w-125 flex-col items-center justify-between rounded-[2.5rem] bg-card/80 backdrop-blur-xl p-12 shadow-2xl border border-border"
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.05 }}
                             transition={springTransition}
-                            >
-                                <div className="text-6xl mb-4 animate-bounce">⏳</div>
-                                <p className="text-muted-foreground font-semibold animate-pulse">Проверка сессии...</p>
+                        >
+                            {/* Пульсирующий заголовок на месте "Выберите роль" */}
+                            <Skeleton className="h-10 w-56 rounded-2xl bg-secondary/50" />
+                            
+                            {/* Пульсирующие плашки на месте кнопок Покупатель/Продавец */}
+                            <div className="flex w-full gap-6 mt-auto">
+                                <Skeleton className="flex-1 h-32 rounded-3xl bg-secondary/50" />
+                                <Skeleton className="flex-1 h-32 rounded-3xl bg-secondary/50" />
+                            </div>
                         </motion.div>
                     )}
 
