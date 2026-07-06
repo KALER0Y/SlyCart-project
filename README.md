@@ -4,15 +4,18 @@ SlyCart is a comprehensive SaaS solution designed for merchants to manage their 
 
 ## 🌟 Key Features
 
-*   **Telegram-Native Authentication:** Seamless registration and identification using Telegram IDs.
-*   **Multi-Tenant SaaS Architecture:** Support for "Owners" who can manage multiple brands and points of sale (Shops).
-*   **Secure Content Management:** Multi-level filtering (`shop -> owner -> user`) ensures users only manage their own content.
-*   **Full-Featured Catalog:** Product management with support for images, categories, and stock tracking.
-*   **Robust Order System:** Comprehensive order lifecycle management with status tracking and audit history.
-*   **Tariff & Subscription Management:** Flexible tier-based limits for shops and products.
+*   **Telegram-Native Authentication:** Registration and identification via Telegram ID (currently manual input on the backend; migration to signed `initData` validation is planned).
+*   **Multi-Tenant SaaS Architecture (API-level):** Data models and API support for "Owners" managing multiple brands and points of sale (Shops).
+*   **Access Filtering (API-level):** Multi-level filtering (`shop -> owner -> user`) implemented in the API layer to scope content per user.
+*   **Product Catalog (API-level):** Models and endpoints for products with categories, images, and stock tracking.
+*   **Order System (API-level):** Models and endpoints for order lifecycle with status tracking and change history.
+*   **Tariff & Subscription Management (API-level):** Tier-based limits for shops and products.
 *   **Type-Safe API:** Powered by Django Ninja with full Pydantic schema validation.
-*   **Decimal Precision for Finances:** Using the `Decimal` field instead of float for currency rates and prices, completely eliminating floating-point rounding errors during financial transactions.
-*   **Optimized Pagination:** High-performance product listing queries to ensure fast catalog rendering under load inside Telegram Web Apps (TWA).
+*   **Decimal Precision for Finances:** Using the `Decimal` field instead of float for currency rates and prices, eliminating floating-point rounding errors.
+*   **Role-Based Redirects:** Next.js middleware reads session cookies and redirects users based on role.
+*   **Telegram Bot (prototype):** Basic Aiogram 3.x bot, currently being reworked.
+
+> **Note:** Backend/API layer is functional and covers the core business logic. Frontend (Next.js) is under active development — most screens are not yet implemented.
 
 ## 🛠 Tech Stack
 
