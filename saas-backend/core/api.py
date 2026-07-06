@@ -73,13 +73,15 @@ def create_user_endpoint(request, data: TelegramUserIn, response: HttpResponse):
     # Это значит, что твой React-код может прочитать эту куку. 
     # Левый сайт прочитать куки другого домена не может из-за политики безопасности браузеров (SOP).
 
+    access = refresh.access_token
+    access["role"] = user.role
     # Эта функция будет ложить куки в HttpResponse автоматически
     set_auth_cookie(
         response=response, 
-        access_token=str(refresh.access_token), # Превращаем в строку здесь
+        access_token=str(access), # Превращаем в строку здесь
         refresh_token=str(refresh),
         csrf_token=csrf_token, 
-        debug_status=DEBUG
+        debug_status=DEBUG,
         )
 
     return user
