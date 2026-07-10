@@ -1,8 +1,8 @@
 import pytest
 
-from .exceptions import ShopLimitExceededError, UserAlreadyExistsError, InvalidRoleError
-from .services import create_user, create_shop
-from .models import TelegramUser, OwnerProfile, Tariff, Shop
+from core.exceptions import ShopLimitExceededError, UserAlreadyExistsError, InvalidRoleError
+from core.services import create_user, create_shop
+from core.models import TelegramUser, OwnerProfile, Shop
 # Create your tests here.
 
 
