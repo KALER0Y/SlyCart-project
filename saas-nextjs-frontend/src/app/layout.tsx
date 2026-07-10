@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from 'next/script'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./providers/ThemeProvider";
@@ -32,7 +33,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </QueryProvider>
         </ThemeProvider>
+        <Script 
+          src="https://telegram.org/js/telegram-web-app.js" 
+          strategy="beforeInteractive"
+          />
       </body>
     </html>
   )
 }
+ 

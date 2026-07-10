@@ -1,9 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { components } from "@/types/api";
-import { config } from "process";
-import { error } from "console";
-import { request } from "http";
-import { data } from "motion/react-client";
 
 
 export type TelegramUserIn = components["schemas"]["TelegramUserIn"]
