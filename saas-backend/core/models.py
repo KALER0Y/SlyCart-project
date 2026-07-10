@@ -119,8 +119,8 @@ class CustomerProfile(models.Model):
                                     verbose_name="Покупатель")
     
     phone = PhoneNumberField(verbose_name="Номер телефона", 
-                            null=False, 
-                            blank=False,
+                            null=True, 
+                            blank=True,
                             unique=True,
                             region="RU")
     

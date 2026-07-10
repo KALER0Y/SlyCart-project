@@ -196,11 +196,7 @@ def change_order_status(order: Order, new_status: str) -> Order:
         return order
     
 def create_user(telegram_id: int, 
-                role: str, 
-                inn: str = None, 
-                brand_name: str = None, 
-                phone_number: str = None,
-                tariff: Tariff = None) -> TelegramUser:
+                role: str) -> TelegramUser:
       """
       Создает пользователя в зависимости от роли
       """
@@ -215,70 +211,42 @@ def create_user(telegram_id: int,
         if TelegramUser.objects.filter(user_id=telegram_id).exists():
             raise UserAlreadyExistsError("Такой пользователь уже существует!")
         
-        
         tg_user = TelegramUser.objects.create(
             user_id=telegram_id,
             role=role
         )
 
         if role == ProfileRole.OWNER.value:
-            create_owner_profile(user=tg_user, 
-                                 inn=inn, 
-                                 brand_name=brand_name, 
-                                 tariff=tariff, 
-                                 phone_number=phone_number)
+            create_owner_profile(user=tg_user)
         else:
-            create_customer_profile(user=tg_user, phone_number=phone_number)
+            create_customer_profile(user=tg_user)
 
         logger.info(f"Пользователь {tg_user.user_id} с ролью {tg_user.get_role_display()} успешно создан!")
         return tg_user
 
-def create_customer_profile(user: TelegramUser, phone_number: str) -> CustomerProfile:
+def create_customer_profile(user: TelegramUser) -> CustomerProfile:
     """
     Создает профиль покупателя
     """
     with transaction.atomic():
         logger.info("Создание профиля покупателя")
 
-        if not phone_number: 
-            raise EmptyPhoneNumberError("Для покупателя номер телефона обязателен")
-        
-        if CustomerProfile.objects.filter(phone=phone_number).exists():
-            raise PhoneNumberAlreadyTakenError("Такой номер телефона уже существует!")
-
         return CustomerProfile.objects.create(
-            customer=user,
-            phone=phone_number
+            customer=user
         )
         
-def create_owner_profile(user: TelegramUser, 
-                         inn: str, 
-                         brand_name: str | None = None, 
-                         tariff: Tariff = None, 
-                         phone_number: str = None) -> OwnerProfile:
+def create_owner_profile(user: TelegramUser) -> OwnerProfile:
     """
     Создает профиль продавца
     """
     with transaction.atomic():
         logger.info("Создание профиля продавца")
-
-        if OwnerProfile.objects.filter(phone=phone_number).exists():
-            raise PhoneNumberAlreadyTakenError("Такой номер телефона уже существует!")
         
-        if brand_name and OwnerProfile.objects.filter(brand_name=brand_name).exists():
-            raise BrandAlreadyTakenError("Этот бренд уже занят!")
-
-        owner_tariff = tariff
-
-        if not tariff:
-            owner_tariff = Tariff.objects.get_or_create(plan="Бесплатный")[0] # Этот метод создает кортеж, поэтому достаем первую запись
+        owner_tariff = Tariff.objects.get_or_create(plan="Бесплатный")[0] # Этот метод создает кортеж, поэтому достаем первую запись
  
         return OwnerProfile.objects.create(
             owner=user,
-            tariff=owner_tariff,
-            brand_name=brand_name,
-            owner_inn=inn,
-            phone=phone_number
+            tariff=owner_tariff
         )
     
 def create_shop(user: OwnerProfile, name: str ,link: str = None) -> Shop:

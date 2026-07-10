@@ -1,15 +1,17 @@
 import os
-import uuid
 import logging
+
+import uuid
+from typing import List
+
 from django.http import HttpResponse
+from django.contrib.auth import login
+from django.shortcuts import get_object_or_404
+
 from ninja import Router, File
 from ninja.errors import HttpError
 from ninja.pagination import paginate
 from ninja.files import UploadedFile
-from typing import List
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import login
-
 # Импортируем нужные классы из библиотеки ninja_jwt
 # Класс выше(AccessToken) содержит в себе всю сложную математику криптографии для расшифроки и проверки секретного ключа
 from ninja_jwt.tokens import RefreshToken, AccessToken
@@ -18,8 +20,8 @@ from ninja_jwt.exceptions import TokenError
 # Этот класс работает с безопасностью кук. Автоматически парсит заголовки браузера и ищет там куки
 from ninja.security import APIKeyCookie 
 
-from .exceptions import NegativePriceError
-from .utils import set_auth_cookie
+from .exceptions import NegativePriceError, SignatureError
+from .utils import set_auth_cookie, verify_telegram_initdata
 from .models import OwnerProfile, Product, Shop
 from .services import (
     create_user, 
@@ -41,9 +43,11 @@ from .schemas import (
     ProductPatch
     )
 
+
 logger = logging.getLogger(__name__)
 
 core_router = Router()
+
 
 DEBUG = os.getenv("DEBUG", "False") == "True" 
 # Эндпоинты (Endpoints) — это, по сути, «адреса», 
@@ -52,15 +56,15 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 @core_router.post("/register", response={201: TelegramUserOut}, tags=["POST"]) # Что то похожее на эндпоинт
 def create_user_endpoint(request, data: TelegramUserIn, response: HttpResponse): # Что будет принимать функция
     try:
+        valid_user = verify_telegram_initdata(data.init_data)
+
         user = create_user(
-            telegram_id=data.user_id,
-            role=data.role,
-            phone_number=data.phone_number,
-            inn=data.inn,
-            brand_name=data.brand_name,
-            )
+        telegram_id=valid_user.get('id'),
+        role=data.role
+        )
+
         
-    except (UserAlreadyExistsError, PhoneNumberAlreadyTakenError, BrandAlreadyTakenError) as e:
+    except (UserAlreadyExistsError, PhoneNumberAlreadyTakenError, BrandAlreadyTakenError, SignatureError) as e:
         raise HttpError(400, str(e))
     except (EmptyPhoneNumberError, InvalidRoleError) as e:
         raise HttpError(422, str(e))

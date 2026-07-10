@@ -14,11 +14,8 @@ class Roles(str, Enum):
     owner = "owner" 
 
 class TelegramUserIn(Schema): # Что мы будем вносить
-    user_id: int
+    init_data: str
     role: Roles
-    phone_number: str
-    inn: str | None = None
-    brand_name: str | None = None
 
 
 class TelegramUserOut(ModelSchema): # Что мы будет отдавать в front(modelSchema лучше использовать для Out)
