@@ -49,3 +49,7 @@ class NegativePriceError(BaseServiceException):
 class NoProductImages(BaseServiceException):
     """Отсутствуют фотографии для товара"""
     pass
+
+class SignatureError(BaseServiceException):
+    """Ошибка проверки подлинности подписи"""
+    pass
