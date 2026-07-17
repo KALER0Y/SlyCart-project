@@ -161,6 +161,12 @@ export default function Register() {
 
     const isGuest: boolean = !isLoading && !isSuccess;
 
+    useEffect(() => {
+        if (isGuest && role && isConfirmed){
+            window.Telegram.WebApp.initData = process.env.NEXT_PUBLIC_TG_MOCK_DATA
+        }
+    }, [isGuest, role, isConfirmed]);
+
     return (
         <div className="relative flex h-screen w-full items-center justify-center bg-background overflow-hidden">
 
@@ -245,58 +251,13 @@ export default function Register() {
                             </div>
                         </motion.div>
                     )}
-
-                    {/* STEP 3: FORM */}
-                    {isGuest && isConfirmed && (
-                        <motion.div
-                            key="step-3"
-                            className="flex h-115 w-125 flex-col items-center rounded-[2.5rem] bg-card p-10 shadow-2xl border border-border"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.05 }}
-                            transition={springTransition}
-                        >
-                            <h2 className="text-3xl font-black mb-1 italic tracking-tighter">SlyCart</h2>
-                            <p className="text-muted-foreground mb-8 text-sm uppercase tracking-widest font-semibold opacity-70">
-                                {role === 'owner' ? 'Регистрация Продавца' : 'Регистрация Покупателя'}
-                            </p>
-
-                            <div className="w-full space-y-4">
-                                <input
-                                    type="number"
-                                    value={telegramId}
-                                    onChange={(e) => setTelegramId(e.target.value)}
-                                    /* e - событие, target - цель(input), value - значение(всегда string!!) */
-                                    placeholder="Ваш Телеграм ID"
-                                    className="w-full p-4 bg-secondary/50 border border-border rounded-xl outline-none focus:ring-2 ring-blue-500/20"
-                                />
-                                <PatternFormat
-                                    format="+7 (###) ###-##-##"
-                                    allowEmptyFormatting
-                                    mask="_"
-                                    value={phone}
-                                    onValueChange={(values) => setPhone(values.value)}
-                                    className="w-full p-4 bg-secondary/50 border border-border rounded-xl outline-none focus:ring-2 ring-blue-500/20"
-                                />
-                                <div className="pt-2">
-                                    <ActionButton
-                                        onClick={handleRegister}
-                                        disabled={isPending}
-                                        label={isPending ? "Загрузка..." : "Завершить регистрацию"}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="mt-auto">
-                                <ActionButton
-                                    label="Отменить"
-                                    variant="ghost"
-                                    onClick={resetSelection}
-                                    className="text-[10px] uppercase tracking-[0.2em] py-1 opacity-50 hover:opacity-100 transition-opacity"
-                                />
-                            </div>
-                        </motion.div>
-                    )}
+                    {/* STEP 3: INITDATA*/}
+                    {/* {isGuest && role && isConfirmed && (
+                        // console.log(process.env.NEXT_PUBLIC_TG_MOCK_DATA)
+                        useEffect(() => {
+                            window.Telegram.WebApp.initData = process.env.NEXT_PUBLIC_TG_MOCK_DATA
+                        })
+                    )} */}
                 </AnimatePresence>
             </div>
         </div>

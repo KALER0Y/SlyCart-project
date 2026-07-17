@@ -119,10 +119,10 @@ class CustomerProfile(models.Model):
                                     verbose_name="Покупатель")
     
     phone = PhoneNumberField(verbose_name="Номер телефона", 
-                            null=True, 
-                            blank=True,
-                            unique=True,
-                            region="RU")
+                             null=True, 
+                             blank=True,
+                             unique=True,
+                             region="RU")
     
     def clean(self): # "Костыль" для админки
         if self.customer.role != "customer":
@@ -332,7 +332,7 @@ class Order(models.Model):
 
     CHOICES = [
         ("pending", "Ожидает оплаты"),
-        ("paid", "Оплачен"),
+        ("paid", "Оплачен"),*
         ("shipped", "Отправлен"),
         ("completed", "Завершен"),
         ("canceled", "Отменен"),

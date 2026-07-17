@@ -6,7 +6,7 @@ import os
 
 from ninja_extra import NinjaExtraAPI, api_controller, http_post
 from core.api import core_router
-from core.utils import set_auth_cookie
+from core.utils.set_cookie import set_auth_cookie
 
 from ninja.renderers import JSONRenderer
 from core.exceptions import UserAlreadyExistsError, PhoneNumberAlreadyTakenError
@@ -45,7 +45,7 @@ def user_already_exists_handler(request, exc):
     )
 
 @api.exception_handler(PhoneNumberAlreadyTakenError)
-def user_already_exists_handler(request, exc):
+def user_phone_number_exists(request, exc):
 
     return api.create_response(
         request=request,

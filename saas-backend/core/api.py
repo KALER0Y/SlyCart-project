@@ -21,7 +21,8 @@ from ninja_jwt.exceptions import TokenError
 from ninja.security import APIKeyCookie 
 
 from .exceptions import NegativePriceError, SignatureError
-from .utils import set_auth_cookie, verify_telegram_initdata
+from .utils.set_cookie import set_auth_cookie
+from .utils.generate_initdata import verify_telegram_initdata
 from .models import OwnerProfile, Product, Shop
 from .services import (
     create_user, 
