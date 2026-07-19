@@ -5,7 +5,6 @@ import uuid
 from typing import List
 
 from django.http import HttpResponse
-from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
 
 from ninja import Router, File
@@ -22,7 +21,7 @@ from ninja.security import APIKeyCookie
 
 from .exceptions import NegativePriceError, SignatureError
 from .utils.set_cookie import set_auth_cookie
-from .utils.generate_initdata import verify_telegram_initdata
+from .utils.initdata import verify_telegram_initdata
 from .models import OwnerProfile, Product, Shop
 from .services import (
     create_user, 
@@ -60,8 +59,8 @@ def create_user_endpoint(request, data: TelegramUserIn, response: HttpResponse):
         valid_user = verify_telegram_initdata(data.init_data)
 
         user = create_user(
-        telegram_id=valid_user.get('id'),
-        role=data.role
+            telegram_id=valid_user.get('id'),
+            role=data.role
         )
 
         

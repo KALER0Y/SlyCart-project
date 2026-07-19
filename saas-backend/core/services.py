@@ -15,6 +15,7 @@ from .exceptions import (
     BrandAlreadyTakenError,
     InvalidOrderStatusError,
     PhoneNumberAlreadyTakenError,
+    EmptyPhoneNumberError,
     ShopAlreadyExists,
     ProductLimitExceededError,
     NegativePriceError

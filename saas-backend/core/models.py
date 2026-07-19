@@ -332,7 +332,7 @@ class Order(models.Model):
 
     CHOICES = [
         ("pending", "Ожидает оплаты"),
-        ("paid", "Оплачен"),*
+        ("paid", "Оплачен"),
         ("shipped", "Отправлен"),
         ("completed", "Завершен"),
         ("canceled", "Отменен"),
