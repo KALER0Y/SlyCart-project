@@ -9,6 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { authApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
+declare global{
+    interface Window{
+        Telegram: {
+            WebApp: {
+                initData: string
+            }
+        }
+    }
+}
 
 // --- ТИПИЗАЦИЯ ---
 type Role = "customer" | "owner" | null;
@@ -102,6 +111,7 @@ export function ModeToggle() {
     );
 }
 
+
 // --- ОСНОВНОЙ ЭКРАН ---
 export default function Register() {
     // Router
@@ -109,8 +119,8 @@ export default function Register() {
 
     const [role, setRole] = useState<Role>(null);
     const [isConfirmed, setIsConfirmed] = useState<boolean>(false);
-    const [phone, setPhone] = useState('');
-    const [telegramId, setTelegramId] = useState('');
+    // const [phone, setPhone] = useState('');
+    // const [telegramId, setTelegramId] = useState('');
 
     const { data, isLoading, isSuccess } = useQuery({
         queryKey: ["query-user"], // Уникальный ключ по которому будут кешироватся данные
@@ -141,31 +151,36 @@ export default function Register() {
 
     const handleRegister = () => {
 
-        if (!role || !telegramId || !phone) {
+        if (!role) {
             console.error("Не все поля заполнены!");
             return; // Останавливаем выполнение, если role === null
         };
 
         mutate({
             // ГЛАВНОЕ!!! Название полей должно быть таким же как и в Schemas!!!
-            user_id: Number(telegramId),
+            init_data: window.Telegram?.WebApp?.initData || query_str || "",
             role: role, // Сделали проверку и теперь TS будет уверен в том, что role не будет null
-            phone_number: phone
         })
     }
 
-    const resetSelection = () => {
-        setRole(null);
-        setIsConfirmed(false);
-    };
+    // const resetSelection = () => {
+    //     setRole(null);
+    //     setIsConfirmed(false);
+    // };
 
     const isGuest: boolean = !isLoading && !isSuccess;
+    const query_str = process.env.NEXT_PUBLIC_TG_MOCK_DATA
+    // const [initData, setinitData] = useState<string>("");
 
     useEffect(() => {
-        if (isGuest && role && isConfirmed){
-            window.Telegram.WebApp.initData = process.env.NEXT_PUBLIC_TG_MOCK_DATA
+        if (isGuest && role && isConfirmed ){
+            if (process.env.NODE_ENV == "development"){
+                window.Telegram = { WebApp: { initData: query_str}};
+            }
+            // setinitData(window.Telegram.WebApp.initData);
+            handleRegister();
         }
-    }, [isGuest, role, isConfirmed]);
+    }, [isGuest, role, isConfirmed, query_str]);
 
     return (
         <div className="relative flex h-screen w-full items-center justify-center bg-background overflow-hidden">
