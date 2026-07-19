@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import json
 import time
-from urllib.parse import parse_qsl, urlencode
+from urllib.parse import urlencode
 
 from django.conf import settings
 from core.exceptions import SignatureError

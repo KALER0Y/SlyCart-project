@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "NinjaAPI",
+    "title": "NinjaExtraAPI",
     "version": "1.0.0",
     "description": ""
   },
@@ -12,8 +12,8 @@
         "summary": "Create User Endpoint",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
@@ -23,6 +23,9 @@
             }
           }
         },
+        "tags": [
+          "POST"
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -52,6 +55,9 @@
             }
           }
         },
+        "tags": [
+          "POST"
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -81,6 +87,9 @@
             }
           }
         },
+        "tags": [
+          "POST"
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -141,7 +150,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "GET"
+        ]
       }
     },
     "/api/core/shops/{shop_id}/products": {
@@ -175,7 +187,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "GET"
+        ]
       }
     },
     "/api/core/product/{product_id}": {
@@ -205,6 +220,9 @@
             }
           }
         },
+        "tags": [
+          "PATCH"
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -243,7 +261,10 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "tags": [
+          "DELETE"
+        ]
       }
     },
     "/api/core/products": {
@@ -285,6 +306,61 @@
               }
             }
           }
+        },
+        "tags": [
+          "GET"
+        ]
+      }
+    },
+    "/api/core/me": {
+      "get": {
+        "operationId": "core_api_jwt_token_auth",
+        "summary": "Jwt Token Auth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "CookieJWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/auth/pair": {
+      "post": {
+        "operationId": "mytoken_obtain_token_fe0c5bf6",
+        "summary": "Obtain Token",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenObtainPairOutputSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyTokenObtainPairSchema"
+              }
+            }
+          },
+          "required": true
         }
       }
     }
@@ -320,44 +396,17 @@
       },
       "TelegramUserIn": {
         "properties": {
-          "user_id": {
-            "title": "User Id",
-            "type": "integer"
+          "init_data": {
+            "title": "Init Data",
+            "type": "string"
           },
           "role": {
             "$ref": "#/components/schemas/Roles"
-          },
-          "phone_number": {
-            "title": "Phone Number",
-            "type": "string"
-          },
-          "inn": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Inn"
-          },
-          "brand_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Brand Name"
           }
         },
         "required": [
-          "user_id",
-          "role",
-          "phone_number"
+          "init_data",
+          "role"
         ],
         "title": "TelegramUserIn",
         "type": "object"
@@ -642,6 +691,54 @@
         ],
         "title": "PagedProductOut",
         "type": "object"
+      },
+      "TokenObtainPairOutputSchema": {
+        "properties": {
+          "user_id": {
+            "title": "ID телеграмм пользователя",
+            "type": "integer"
+          },
+          "refresh": {
+            "title": "Refresh",
+            "type": "string"
+          },
+          "access": {
+            "title": "Access",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "refresh",
+          "access"
+        ],
+        "title": "TokenObtainPairOutputSchema",
+        "type": "object"
+      },
+      "MyTokenObtainPairSchema": {
+        "properties": {
+          "user_id": {
+            "title": "User Id",
+            "type": "integer"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "phone_number"
+        ],
+        "title": "MyTokenObtainPairSchema",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "CookieJWTAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "access"
       }
     }
   },
