@@ -124,6 +124,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/core/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Jwt Token Auth */
+        get: operations["core_api_jwt_token_auth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Obtain Token */
+        post: operations["mytoken_obtain_token_fe0c5bf6"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -145,15 +179,9 @@ export interface components {
         Roles: "customer" | "owner";
         /** TelegramUserIn */
         TelegramUserIn: {
-            /** User Id */
-            user_id: number;
+            /** Init Data */
+            init_data: string;
             role: components["schemas"]["Roles"];
-            /** Phone Number */
-            phone_number: string;
-            /** Inn */
-            inn?: string | null;
-            /** Brand Name */
-            brand_name?: string | null;
         };
         /** ShopOut */
         ShopOut: {
@@ -262,6 +290,22 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** TokenObtainPairOutputSchema */
+        TokenObtainPairOutputSchema: {
+            /** ID телеграмм пользователя */
+            user_id: number;
+            /** Refresh */
+            refresh: string;
+            /** Access */
+            access: string;
+        };
+        /** MyTokenObtainPairSchema */
+        MyTokenObtainPairSchema: {
+            /** User Id */
+            user_id: number;
+            /** Phone Number */
+            phone_number: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -284,8 +328,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -458,6 +502,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedProductOut"];
+                };
+            };
+        };
+    };
+    core_api_jwt_token_auth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    mytoken_obtain_token_fe0c5bf6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyTokenObtainPairSchema"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenObtainPairOutputSchema"];
                 };
             };
         };
