@@ -13,11 +13,12 @@ from ninja.pagination import paginate
 from ninja.files import UploadedFile
 # Импортируем нужные классы из библиотеки ninja_jwt
 # Класс выше(AccessToken) содержит в себе всю сложную математику криптографии для расшифроки и проверки секретного ключа
+from ninja.responses import Response
 from ninja_jwt.tokens import RefreshToken, AccessToken
 # Класс TokenError будет выскакивать если ключ подделан или просрочен
 from ninja_jwt.exceptions import TokenError
 # Этот класс работает с безопасностью кук. Автоматически парсит заголовки браузера и ищет там куки
-from ninja.security import APIKeyCookie 
+from ninja.security import APIKeyCookie, APIKeyHeader
 
 from .exceptions import NegativePriceError, SignatureError
 from .utils.set_cookie import set_auth_cookie
@@ -185,6 +186,30 @@ def delete_product_endpoint(request, product_id: int, owner_id: int):
 
     return 204, None
 
+class InitDataJWTAuth(APIKeyHeader):
+    param_name = "X-TG-Init-Data"
+
+    def authenticate(self, request, key):
+        from .models import TelegramUser
+        # 1) В key у нас лежит наша query-строка. Вызываем функцию валидации.
+        try:
+            raw_data = verify_telegram_initdata(key)
+
+            # 2) Теперь у нас есть словарь со значениями. Достанем от туда юзер айди
+            user_id = raw_data.get("id")
+
+            # 3) Ищем пользователя по этому ключу
+            
+            user = TelegramUser.objects.get(user_id=user_id)
+
+            return user
+
+
+        except (TelegramUser.DoesNotExist, SignatureError):
+            return None
+
+
+
 # Дорабатываем класс Cookie под себя с помощью наследования.
 # APIKeyCookie как робот - может делать 90 процентов работы, но он не знает что именно мне надо
 class CookieJWTAuth(APIKeyCookie):
@@ -193,6 +218,8 @@ class CookieJWTAuth(APIKeyCookie):
     def authenticate(self, request, key):
         # key - то что нашел "робот" в нашей куки. Это наш access токен в виде строки
         from .models import TelegramUser
+        if not key:
+            return None
         try:
             # 1. Передайть токен (переменную key) в класс AccessToken, чтобы расшифровать его.
             # Назвать результат, например, access_token.
@@ -207,7 +234,7 @@ class CookieJWTAuth(APIKeyCookie):
             # 4. Вернуть найденного пользователя (return user).
             return user
         
-        except (TokenError, TelegramUser.DoesNotExist):
+        except (TokenError, TelegramUser.DoesNotExist, KeyError):
             return None
 
         except Exception as e:
@@ -216,7 +243,35 @@ class CookieJWTAuth(APIKeyCookie):
             traceback.print_exc() # Распечатает подробную трассировку ошибки в терминал
             return None
         
+class RefreshCookieJWTAuth(APIKeyCookie):
+    param_name = "refresh"
+
+    def authenticate(self, request, key):
+        from .models import TelegramUser
+        if not key:
+            return None
+        try:
+            # 1) Достаем токен, расшифровываем
+            refresh_token = RefreshToken(token=key)
+
+            # 2) Достаем юзера
+            user_id = refresh_token["user_id"]
+
+            # 3) Ищем его в базе данных
+            user = TelegramUser.objects.get(id=user_id)
+
+            # 4) Возвращаем
+            return user
+        
+        except (TelegramUser.DoesNotExist, TokenError, KeyError):
+            return None
+
+
+        
 cookie_auth = CookieJWTAuth()
+refresh_auth = RefreshCookieJWTAuth()
+initdata_auth = InitDataJWTAuth()
+
 
 @core_router.get("/me", auth=cookie_auth, tags=["Auth"])
 def jwt_token_auth(request):
@@ -226,6 +281,74 @@ def jwt_token_auth(request):
         "role": request.auth.role, # auth вместо user, потому что в user лежит AnonymousUser без данных
         "user_id": request.auth.user_id,
     }
+
+@core_router.get('/refresh', auth=refresh_auth, tags=["Auth"])
+def refresh_token_auth(request):
+    
+    # 1) Записать нового пользователя
+    user = request.auth
+
+    # 2) Найти старый токены и ревоукнуть
+    old_refresh = RefreshToken(token=request.COOKIES.get("refresh"))
+    old_refresh.blacklist()
+
+    # 3) Создать новые токены
+    new_refresh = RefreshToken.for_user(user)
+    new_access = new_refresh.access_token
+
+    # 4) Записать новые токены
+    data = {
+        "authenticated": True,
+        "role": request.auth.role, 
+        "user_id": request.auth.user_id,
+    }
+
+    response = Response(data)
+
+    csrf_token = request.COOKIES.get("csrf_token")
+
+    new_access["role"] = user.role
+    # Эта функция будет ложить куки в HttpResponse автоматически
+    set_auth_cookie(
+        response=response, 
+        access_token=str(new_access), # Превращаем в строку здесь
+        refresh_token=str(new_refresh),
+        csrf_token=csrf_token if csrf_token else str(uuid.uuid4()), 
+        debug_status=DEBUG,
+        )
+    
+    return response
+
+@core_router.get("/login", auth=initdata_auth, tags=["Auth"])
+def initdata_auth(request):
+    
+    data = {
+        "authenticated": True,
+        "role": request.auth.role, # auth вместо user, потому что в user лежит AnonymousUser без данных
+        "user_id": request.auth.user_id,
+    }
+
+    user = request.auth
+    refresh = RefreshToken.for_user(user)
+    csrf_token = str(uuid.uuid4()) # Лучше перевести в string
+
+    response = Response(data)
+
+    access = refresh.access_token
+    access["role"] = user.role
+    # Эта функция будет ложить куки в HttpResponse автоматически
+    set_auth_cookie(
+        response=response, 
+        access_token=str(access), # Превращаем в строку здесь
+        refresh_token=str(refresh),
+        csrf_token=csrf_token, 
+        debug_status=DEBUG,
+        )
+    
+    return response
+
+
+
 
   
 # Когда в Django Ninja срабатывает встроенная магия login(request, user), 

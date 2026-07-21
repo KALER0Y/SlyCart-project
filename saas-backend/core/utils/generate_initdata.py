@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import time
+import random
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -14,7 +15,7 @@ def generate_fake_data() -> str:
         "query_id": "AAHdJu0oAAAAAN0m7SgX7By1",
         "user": json.dumps(
             {
-                "id": 123456789,
+                "id": random.randint(1, 1000),
                 "first_name": "John",
                 "last_name": "Doe",
                 "username": "johndoe",

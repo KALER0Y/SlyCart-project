@@ -14,10 +14,10 @@ class CSRFTokenMiddleware:
         # the view (and later middleware) are called.
 
         # 1. Проверяем только "опасные" методы
+        EXEMPT_PATH = ("/api/core/register", "/api/core/refresh", "/api/core/login")
         if request.method in ("POST", "PUT", "DELETE", "PATCH"):
-            
             # Пропускаем ручку авторизации (там токена еще нет)
-            if request.path.endswith("/api/core/register"):
+            if any(request.path.endswith(path) for path in EXEMPT_PATH):
                 return self.get_response(request)
 
             # 2. Достаем токены
