@@ -14,6 +14,9 @@ from pathlib import Path
 import os
 from environs import Env
 from datetime import timedelta
+from corsheaders.defaults import default_headers
+
+
 
 
 env: Env = Env()
@@ -45,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'phonenumber_field',
+    'ninja_jwt.token_blacklist',
     'ninja',
     "ninja_extra",
     'corsheaders',
@@ -148,6 +152,10 @@ CORS_ALLOWED_ORIGINS = [
 
 # Разрешаем куки
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-tg-init-data"
+]
 
 AUTH_USER_MODEL = 'core.TelegramUser'
 
