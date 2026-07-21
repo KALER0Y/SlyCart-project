@@ -1,5 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { components } from "@/types/api";
+import { init } from "next/dist/compiled/webpack/webpack";
+import { config } from "process";
+import { error } from "console";
 
 
 export type TelegramUserIn = components["schemas"]["TelegramUserIn"]
@@ -78,6 +81,36 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     // Ошибка (reject) — что-то сломалось.
 });
 
+const retriedRequests = new Set<string>();
+
+api.interceptors.response.use(
+    (response) => response, // Если ошибки нет и все четко, не изменяем ответ
+    async (error: AxiosError) => {
+        const originalRequest = error.config; // Работает для всех 
+
+        if (error.response?.status == 401 && originalRequest?.url == "/me" && !retriedRequests.has("/me")){ // Но проверку делаем только для me и только если ошибка была 401
+            // Если бы не было проверки на адрес, код ниже скорее всего не решал бы нашу проблему и водил по кругу
+            retriedRequests.add("/me")
+            try{
+                await api.get("/refresh") // Идем туда, обновляем токен и куки
+                return api(originalRequest)// Делаем запросу туда же, но с новыми куками
+            } catch {
+                try{
+                    await api.get("/login", { // Если рефреш не прошел, значит пользователя нет. Пробуем логинится
+                        headers: { "X-TG-Init-Data": window.Telegram.WebApp.initData }
+                    });
+                    return api(originalRequest); // И теперь отправляем еще раз на тот же /me
+                } catch (error){
+                    return Promise.reject({ needsRegister: true }) // Если ничего не прошло, значит, ручная регистрация от пользователя пользователя.
+                }
+            } finally {
+                retriedRequests.delete("/me") 
+            }
+        }
+        return Promise.reject(error);
+    }
+)
+
 export const authApi = {
     // register - это ключ. Я могу вызвать его так: authApi.register
     // (userData: TelegramUser) - аргумент функции
@@ -93,7 +126,8 @@ export const authApi = {
     authCheck: async () => {
         const { data } = await api.get<isUserAuth>("/me");
         return data;
-    }
+    },
+    
 }
 
 export default api;

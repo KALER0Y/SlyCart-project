@@ -26,14 +26,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="ru" className="dark" suppressHydrationWarning>
       <body className={`${geistSans.variable} font-sans antialiased`}>
         {/* Сначала Темы, потом Данные */}
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <QueryProvider>
+        <QueryProvider>
             {children}
-          </QueryProvider>
-        </ThemeProvider>
+        </QueryProvider>
         {process.env.NODE_ENV == "production" ? <Script 
             src="https://telegram.org/js/telegram-web-app.js" 
             strategy="beforeInteractive"
