@@ -1,5 +1,4 @@
 "use client"
-import { PatternFormat } from 'react-number-format';
 import { motion, AnimatePresence} from 'framer-motion';
 import { useState, useEffect, memo } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -17,6 +16,12 @@ declare global{
             }
         }
     }
+}
+
+const query_str = process.env.NEXT_PUBLIC_TG_MOCK_DATA
+
+if (typeof window != "undefined" && process.env.NODE_ENV == "development"){
+    window.Telegram = { WebApp: { initData: query_str}};
 }
 
 // --- ТИПИЗАЦИЯ ---
@@ -169,14 +174,11 @@ export default function Register() {
     // };
 
     const isGuest: boolean = !isLoading && !isSuccess;
-    const query_str = process.env.NEXT_PUBLIC_TG_MOCK_DATA
+    //const query_str = process.env.NEXT_PUBLIC_TG_MOCK_DATA
     // const [initData, setinitData] = useState<string>("");
 
     useEffect(() => {
         if (isGuest && role && isConfirmed ){
-            if (process.env.NODE_ENV == "development"){
-                window.Telegram = { WebApp: { initData: query_str}};
-            }
             // setinitData(window.Telegram.WebApp.initData);
             handleRegister();
         }
