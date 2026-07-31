@@ -102,11 +102,22 @@
         ]
       }
     },
-    "/api/core/product": {
+    "/api/core/shops/{shop_id}/product": {
       "post": {
         "operationId": "core_api_create_product_endpoint",
         "summary": "Create Product Endpoint",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shop_id",
+            "schema": {
+              "format": "uuid",
+              "title": "Shop Id",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -127,20 +138,17 @@
             "multipart/form-data": {
               "schema": {
                 "properties": {
-                  "images": {
-                    "items": {
-                      "format": "binary",
-                      "type": "string"
-                    },
-                    "title": "Images",
-                    "type": "array"
+                  "image": {
+                    "format": "binary",
+                    "title": "Image",
+                    "type": "string"
                   },
                   "data": {
                     "$ref": "#/components/schemas/ProductIn"
                   }
                 },
                 "required": [
-                  "images",
+                  "image",
                   "data"
                 ],
                 "title": "MultiPartBodyParams",
@@ -149,7 +157,18 @@
             }
           },
           "required": true
-        }
+        },
+        "security": [
+          {
+            "CookieJWTAuth": []
+          },
+          {
+            "RefreshCookieJWTAuth": []
+          },
+          {
+            "InitDataJWTAuth": []
+          }
+        ]
       }
     },
     "/api/core/my-shops": {
@@ -407,7 +426,7 @@
     },
     "/api/auth/pair": {
       "post": {
-        "operationId": "mytoken_obtain_token_e2594494",
+        "operationId": "mytoken_obtain_token_c99b5f19",
         "summary": "Obtain Token",
         "parameters": [],
         "responses": {
@@ -555,6 +574,10 @@
             ],
             "title": "ID"
           },
+          "image": {
+            "title": "Путь до файла",
+            "type": "string"
+          },
           "title": {
             "maxLength": 100,
             "title": "Название товара",
@@ -578,6 +601,7 @@
         "required": [
           "price",
           "shop_id",
+          "image",
           "title",
           "description"
         ],
@@ -586,15 +610,6 @@
       },
       "ProductIn": {
         "properties": {
-          "shop": {
-            "format": "uuid",
-            "title": "Shop",
-            "type": "string"
-          },
-          "user_id": {
-            "title": "User Id",
-            "type": "integer"
-          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -606,6 +621,7 @@
           "price": {
             "anyOf": [
               {
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -627,8 +643,6 @@
           }
         },
         "required": [
-          "shop",
-          "user_id",
           "title",
           "description",
           "price",

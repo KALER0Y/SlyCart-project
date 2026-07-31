@@ -209,9 +209,9 @@ def create_shop_endpoint(request,
                   response=ProductOut, 
                   tags=["POST"])
 def create_product_endpoint(request,
-                            shop_id: uuid,
-                            data: ProductIn, 
-                            image: UploadedFile = File()):
+                            shop_id: uuid.UUID,
+                            data: ProductIn = Form(...), 
+                            image: UploadedFile = File(...)):
 
     shop = get_object_or_404(Shop, id=shop_id, owner__owner__user_id=request.auth.user_id)
 
