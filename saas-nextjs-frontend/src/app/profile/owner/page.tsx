@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from "@/lib/api"
 
 import { authApi } from "@/lib/api";
+import Link from "next/link";
 
 export default function ShopInterface() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -36,7 +37,7 @@ export default function ShopInterface() {
   setPreviewUrl(null);
   };
 
-  const { data, error, isLoading} = useQuery({
+  const { data } = useQuery({
     queryKey: ['myshops'],
     queryFn: authApi.my_shops
   });
@@ -111,15 +112,16 @@ export default function ShopInterface() {
       (
       <div>
           <div className="w-full px-4 text-left font-mono">
-            <h2 className="mb-4 border-b border-zinc-800 pb-2 text-sm font-bold tracking-wider text-zinc-400 uppercase">
+            <h2 className="mb-4 mt-4 border-b border-zinc-800 pb-2 text-sm font-bold tracking-wider text-zinc-400 uppercase">
               Мои магазины ({data.length})
             </h2>
 
             {/* Сетка карточек */}
             <div className="grid grid-cols-2 gap-4">
               {data.map((shop) => (
-                <div
+                <Link
                   key={shop.id}
+                  href={`/shops/${shop.id}`}
                   className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3 transition-all hover:border-zinc-700 hover:bg-zinc-900"
                 >
                   {/* Контейнер картинки */}
@@ -140,7 +142,7 @@ export default function ShopInterface() {
                       {shop.description}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

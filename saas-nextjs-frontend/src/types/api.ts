@@ -38,7 +38,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/core/product": {
+    "/api/core/shops/{shop_id}/product": {
         parameters: {
             query?: never;
             header?: never;
@@ -185,7 +185,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Obtain Token */
-        post: operations["mytoken_obtain_token_e2594494"];
+        post: operations["mytoken_obtain_token_c99b5f19"];
         delete?: never;
         options?: never;
         head?: never;
@@ -252,6 +252,8 @@ export interface components {
             shop_id: string;
             /** ID */
             id?: number | null;
+            /** Путь до файла */
+            image: string;
             /** Название товара */
             title: string;
             /** Описание товара */
@@ -269,13 +271,6 @@ export interface components {
         };
         /** ProductIn */
         ProductIn: {
-            /**
-             * Shop
-             * Format: uuid
-             */
-            shop: string;
-            /** User Id */
-            user_id: number;
             /** Title */
             title: string;
             /** Description */
@@ -410,14 +405,19 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                shop_id: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
                 "multipart/form-data": {
-                    /** Images */
-                    images: string[];
+                    /**
+                     * Image
+                     * Format: binary
+                     */
+                    image: string;
                     data: components["schemas"]["ProductIn"];
                 };
             };
@@ -601,7 +601,7 @@ export interface operations {
             };
         };
     };
-    mytoken_obtain_token_e2594494: {
+    mytoken_obtain_token_c99b5f19: {
         parameters: {
             query?: never;
             header?: never;
