@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Optional
 from pydantic import PositiveInt
-import uuid
+from uuid import UUID, uuid4
 from ninja import Field, Schema, ModelSchema
 from ninja_jwt.tokens import RefreshToken
 from django.db.models import Q
@@ -24,31 +24,29 @@ class TelegramUserOut(ModelSchema): # Что мы будет отдавать в
         fields = ['user_id', 'role']
 
 
-class ShopIn(Schema):
-    owner: int
-    shop_name: str
-    shop_link: str = None
+# class ShopIn(Schema):
+#     owner: int
+#     shop_name: str
+#     shop_link: str = None
 
 
-class ShopOut(ModelSchema):
-    # ModelSchema сделает все сама
-    owner_id: int  # Это "дополнительное" поле для JSON
+# class ShopOut(ModelSchema):
+#     # ModelSchema сделает все сама
+#     owner_id: int  # Это "дополнительное" поле для JSON
 
-    class Meta:
-        model = Shop
-        fields = ['id', 'shop_name', 'shop_link'] # Здесь ТОЛЬКО реальные колонки из таблицы Shop
+#     class Meta:
+#         model = Shop
+#         fields = ['id', 'shop_name', 'shop_link'] # Здесь ТОЛЬКО реальные колонки из таблицы Shop
 
-    @staticmethod # "Добытчик" сам все найдет и напишет
-    def resolve_owner_id(obj):
-        return obj.owner.owner.user_id
+#     @staticmethod # "Добытчик" сам все найдет и напишет
+#     def resolve_owner_id(obj):
+#         return obj.owner.owner.user_id
 
 
 class ProductIn(Schema):
-    shop: uuid.UUID
-    user_id: int
     title: str
     description: str
-    price: Decimal = Field(..., max_digits=10, decimal_places=2) # ...(элипс) означает что поле обязательное. 
+    price: Decimal = Field(..., max_digits=10, decimal_places=2, ge=0) # ...(элипс) означает что поле обязательное. 
     # Информацию обязательно должен прислать бекэнд или пользователь 
     stock: PositiveInt
     is_active: bool = True
@@ -58,12 +56,12 @@ class ProductOut(ModelSchema):
 
     price: Decimal = Field(..., max_digits=12, decimal_places=2, json_schema_extra={"example": "0.00"})
 
-    shop_id: uuid.UUID = Field(..., alias="shop_id")
+    shop_id: UUID = Field(..., alias="shop_id")
     # Always prefer `alias="field_id"` over `alias="field.id"` in schemas when only the ID is needed.
 
     class Meta:
         model = Product
-        fields = ["id", "title", "description", "price", "stock", "is_active"]
+        fields = ["id", "image" ,"title", "description", "price", "stock", "is_active"]
 
 class ProductPatch(Schema):
     user_id: int
@@ -73,10 +71,20 @@ class ProductPatch(Schema):
     stock: Optional[PositiveInt]
     is_active: Optional[bool]
 
+class StoreCreateSchema(Schema):
+    name: str
+    description: str
+    # Фото мы передаем сразу в endpoint
+
+class StoreOutSchema(Schema):
+    id: UUID
+    name: str
+    description: str
+    logo_url: str # В ответе всегда отдаем готовую ссылку на сохраненный файл
+
 class MyTokenObtainPairSchema(Schema):
 
     user_id: int
-    phone_number: str
 
     def to_response_schema(self):
         # Используем Q-объекты для реализации логики "ИЛИ" (OR) в SQL-запросе.
@@ -84,9 +92,7 @@ class MyTokenObtainPairSchema(Schema):
         # сразу в двух разных таблицах профилей (Customer и Owner), 
         # связанных с пользователем через ForeignKey.
         user = TelegramUser.objects.select_related("customer_profile", "owner_profile").filter(
-            Q(user_id=self.user_id) & 
-            (Q(customer_profile__phone=self.phone_number) | Q(owner_profile__phone=self.phone_number))
-        ).first() # Самое первое что нашли
+            Q(user_id=self.user_id)).first() # Самое первое что нашли
 
         # 2. Если пользователь не найден — кидаем ошибку
         if not user:

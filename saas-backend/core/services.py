@@ -2,12 +2,15 @@ import logging
 
 from decimal import Decimal
 from typing import List
+import uuid
+from ninja import File
 from ninja.files import UploadedFile
 from django.db import transaction
 from django.db import models
 from django.db.models import F
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
+from django.core.files.storage import default_storage
 from .exceptions import (
     UserAlreadyExistsError, 
     InvalidRoleError,
@@ -23,7 +26,6 @@ from .exceptions import (
 
 from .models import (
     TelegramUser,
-    Tariff,
     Order, 
     OrderItem,
     OrderHistory, 
@@ -113,36 +115,36 @@ def create_order(customer: CustomerProfile, shop: Shop, cart_items) -> Order:
 
         return order
     
-def upload_product_images(product: Product, images: list) -> None:
-    """
-    Надежная загрузка изображений.
-    Использует обычный цикл для гарантии сохранения файлов на диск/хранилище.
-    """
-    if not images:
-        return
+# def upload_product_images(product: Product, images: list) -> None:
+#     """
+#     Надежная загрузка изображений.
+#     Использует обычный цикл для гарантии сохранения файлов на диск/хранилище.
+#     """
+#     if not images:
+#         return
 
-    if not isinstance(images, list):
-        images = [images]
+#     if not isinstance(images, list):
+#         images = [images]
 
-    if len(images) > 6:
-        raise ValueError("Слишком много фотографий! Максимум 6.")
+#     if len(images) > 6:
+#         raise ValueError("Слишком много фотографий! Максимум 6.")
 
-    with transaction.atomic():
-        # Проверяем наличие главного фото один раз перед циклом
-        has_main_image = product.images.filter(is_main=True).exists()
+#     with transaction.atomic():
+#         # Проверяем наличие главного фото один раз перед циклом
+#         has_main_image = product.images.filter(is_main=True).exists()
 
-        for i, img in enumerate(images):
-            # Делаем фото главным только если у товара ВООБЩЕ нет главного фото
-            # и это самое первое фото в текущем списке
-            is_main = False
-            if not has_main_image and i == 0:
-                is_main = True
+#         for i, img in enumerate(images):
+#             # Делаем фото главным только если у товара ВООБЩЕ нет главного фото
+#             # и это самое первое фото в текущем списке
+#             is_main = False
+#             if not has_main_image and i == 0:
+#                 is_main = True
 
-            ProductImage.objects.create(
-                product=product,
-                image=img,
-                is_main=is_main
-            )
+#             ProductImage.objects.create(
+#                 product=product,
+#                 image=img,
+#                 is_main=is_main
+#             )
         
 def change_main_image(image_id: int) -> None: # Айди фотки из api
     """
@@ -241,40 +243,33 @@ def create_owner_profile(user: TelegramUser) -> OwnerProfile:
     """
     with transaction.atomic():
         logger.info("Создание профиля продавца")
-        
-        owner_tariff = Tariff.objects.get_or_create(plan="Бесплатный")[0] # Этот метод создает кортеж, поэтому достаем первую запись
+        # Этот метод создает кортеж, поэтому достаем первую запись
  
         return OwnerProfile.objects.create(
             owner=user,
-            tariff=owner_tariff
         )
     
-def create_shop(user: OwnerProfile, name: str ,link: str = None) -> Shop:
+def create_shop(user: OwnerProfile, name: str, description: str, logo_file: File) -> Shop:
     """
     Создает магазин
     """
 
     with transaction.atomic():
+        # 1) Достаем расширение файла
+        ext = logo_file.name.split('.')[-1]
+        # 2) Кладем его в указанный репозиторий
+        file_name = f'shops/logos/{uuid.uuid4()}.{ext}'
+        # 3) Сохраняем файл
+        default_storage.save(file_name, logo_file)
 
-        if user.tariff.max_shops <= user.shops.count():
-            raise ShopLimitExceededError("Магазинов больше чем возможно")
-        
-        if link:
-            base_name = slugify(link, allow_unicode=False).replace("-", "_")
-            link = f"{base_name}_shop"
-            
-        
-        if not link:
-            base_name = slugify(user.brand_name, allow_unicode=False).replace("-", "_")
-            link = f"{base_name}_shop"
-
-        if Shop.objects.filter(shop_link=link).exists():
-            raise ShopAlreadyExists("Такой магазин уже существует!")
+        # 4) Сохраняем путь
+        file_path = default_storage.url(file_name)
 
         shop = Shop.objects.create(
             owner=user,
-            shop_name=name,
-            shop_link=link
+            name=name,
+            description=description,
+            logo_url=file_path
         )
 
         return shop
@@ -283,7 +278,7 @@ def create_product(shop: Shop,
                    title: str, 
                    description: str, 
                    price: Decimal,
-                   images: List[UploadedFile], 
+                   image: UploadedFile, 
                    stock: int,
                    is_active: bool = True) -> Product:
     """
@@ -291,15 +286,19 @@ def create_product(shop: Shop,
     """
 
     with transaction.atomic():
+        
+        if not image:
+            raise ValueError("Нет фотографии товара!")
 
-        if shop.owner.tariff.max_products <= shop.products.count():
-            raise ProductLimitExceededError("Превышен лимит товаров!")
-        
-        if price < 0:
-            raise NegativePriceError("Цена не может быть отрицательной!")
-        
-        if not images:
-            raise ValueError("Нет фотографий товара!")
+        # 1) Достаем расширение файла
+        file_ext = image.name.split(".")[-1]
+
+        # 2) Сохраняем файл
+        file = f"shops/product_images/{uuid.uuid4()}.{file_ext}"
+        default_storage.save(file, image)
+
+        # 3) Достаем путь
+        url_image = default_storage.url(file)
         
         product = Product.objects.create(
             shop=shop,
@@ -307,12 +306,8 @@ def create_product(shop: Shop,
             description=description,
             price=price,
             stock=stock,
+            image=url_image,
             is_active=is_active
-        )
-
-        upload_product_images(
-            product=product,
-            images=images
         )
 
         return product

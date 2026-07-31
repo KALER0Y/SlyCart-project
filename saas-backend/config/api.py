@@ -19,7 +19,7 @@ class UnicodeJSONRenderer(JSONRenderer):
         return json.dumps(
             data, 
             cls=NinjaJSONEncoder, # добавили поддержку дат и чисел, так как базовый json это не поддерживает
-            ensure_ascii=False
+            ensure_ascii=False,
         ).encode("utf-8")
 
 DEBUG = os.getenv("DEBUG", "False") == "True" 
@@ -94,5 +94,3 @@ class MyTokenController:
 
 api.add_router("/core/", core_router)
 api.register_controllers(MyTokenController)
-
-# TODO: MiddleWare для сверки csrf токена

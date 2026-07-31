@@ -20,6 +20,11 @@ class CSRFTokenMiddleware:
             if any(request.path.endswith(path) for path in EXEMPT_PATH):
                 return self.get_response(request)
 
+            # # Пропускаем запросы из swagger
+            # referer = request.headers.get("Referer", "")
+            # if "/docs" in referer or "/openapi.json" in referer:
+            #     return self.get_response(request)
+
             # 2. Достаем токены
             csrf_cookie = request.COOKIES.get("csrf_token")
             csrf_header = request.headers.get("X-CSRF-Token")

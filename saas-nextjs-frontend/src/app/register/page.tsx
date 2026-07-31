@@ -96,26 +96,6 @@ const ActionButton = memo(({ label, onClick, disabled, variant = 'primary', clas
 });
 ActionButton.displayName = 'ActionButton';
 
-export function ModeToggle() {
-    const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => { setMounted(true) }, []);
-    if (!mounted) return <div className="w-10 h-10" />;
-
-    return (
-        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            <Button
-                variant="outline"
-                size="icon"
-                className="rounded-xl border-border bg-card"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-                {theme === "dark" ? "🌙" : "☀️"}
-            </Button>
-        </motion.div>
-    );
-}
-
 
 // --- ОСНОВНОЙ ЭКРАН ---
 export default function Register() {
@@ -140,7 +120,7 @@ export default function Register() {
         } 
     }, [isSuccess, router])
 
-    const { mutate, isPending } = useMutation({
+    const { mutate } = useMutation({
         mutationFn: authApi.register,
         // Внизу встроенный callback
         onSuccess: (data) => {
@@ -186,10 +166,6 @@ export default function Register() {
 
     return (
         <div className="relative flex h-screen w-full items-center justify-center bg-background overflow-hidden">
-
-            <div className="absolute top-6 right-6 z-50">
-                <ModeToggle />
-            </div>
 
             {/* ФОНОВЫЙ ПАТТЕРН */}
             <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]"

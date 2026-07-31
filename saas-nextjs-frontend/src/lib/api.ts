@@ -6,6 +6,7 @@ import { error } from "console";
 
 
 export type TelegramUserIn = components["schemas"]["TelegramUserIn"]
+export type StoreOutSchema = components["schemas"]["StoreOutSchema"]
 
 type SafeMethod = 'get' | 'head' | 'options';
 
@@ -16,7 +17,7 @@ interface isUserAuth {
 }
 
 const api = axios.create({
-    baseURL: "http://localhost:8000/api/core",
+    baseURL: "/api/core",
     timeout: 5000,
     withCredentials: true, // Для HttpOnly куков
     headers: {
@@ -122,6 +123,13 @@ export const authApi = {
         console.log(status);
         return data;
     },
+
+    my_shops: async () => {
+        const { data, status} = await api.get<StoreOutSchema[]>("my-shops/");
+        console.log(status);
+        return data;
+    },
+
 
     authCheck: async () => {
         const { data } = await api.get<isUserAuth>("/me");

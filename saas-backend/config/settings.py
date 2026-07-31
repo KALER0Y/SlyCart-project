@@ -35,7 +35,7 @@ BOT_TOKEN = env.str('BOT_TOKEN')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool(name="DEBUG")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -148,10 +148,17 @@ CORS_ALLOW_ALL_ORIGINS = False # Запрещаем доступ всем под
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000", # Адрес фронтенда
-] 
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CSRF_COOKIE_NAME = 'csrf_token'
+CSRF_HEADER_NAME = 'HTTP_X_CSRF_TOKEN'
 
 # Разрешаем куки
-CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-tg-init-data"
@@ -168,6 +175,7 @@ SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
 NINJA_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'CSRF_PROTECT': False
 }
 
 LOGGING = {
@@ -194,3 +202,6 @@ LOGGING = {
         },
     },
 }
+
+SESSION_COOKIE_SAMESITE = "Lax"  # или "None", если нужно строго cross-site
+CSRF_COOKIE_SAMESITE = "Lax"

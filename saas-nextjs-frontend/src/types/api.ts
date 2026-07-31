@@ -141,6 +141,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/core/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Refresh Token Auth */
+        get: operations["core_api_refresh_token_auth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/core/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Initdata Auth */
+        get: operations["core_api_initdata_auth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/pair": {
         parameters: {
             query?: never;
@@ -151,7 +185,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Obtain Token */
-        post: operations["mytoken_obtain_token_fe0c5bf6"];
+        post: operations["mytoken_obtain_token_e2594494"];
         delete?: never;
         options?: never;
         head?: never;
@@ -183,25 +217,26 @@ export interface components {
             init_data: string;
             role: components["schemas"]["Roles"];
         };
-        /** ShopOut */
-        ShopOut: {
-            /** Owner Id */
-            owner_id: number;
-            /** Id */
-            id?: string | null;
-            /** Название магазина */
-            shop_name: string;
-            /** Ссылка (slug) */
-            shop_link: string;
+        /** StoreOutSchema */
+        StoreOutSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Logo Url */
+            logo_url: string;
         };
-        /** ShopIn */
-        ShopIn: {
-            /** Owner */
-            owner: number;
-            /** Shop Name */
-            shop_name: string;
-            /** Shop Link */
-            shop_link?: string;
+        /** StoreCreateSchema */
+        StoreCreateSchema: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /** ProductOut */
         ProductOut: {
@@ -303,8 +338,6 @@ export interface components {
         MyTokenObtainPairSchema: {
             /** User Id */
             user_id: number;
-            /** Phone Number */
-            phone_number: string;
         };
     };
     responses: never;
@@ -348,7 +381,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ShopIn"];
+                "multipart/form-data": {
+                    /** Name */
+                    name: string;
+                    /** Description */
+                    description: string;
+                    /**
+                     * Logo File
+                     * Format: binary
+                     */
+                    logo_file: string;
+                };
             };
         };
         responses: {
@@ -358,7 +401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ShopOut"];
+                    "application/json": components["schemas"]["StoreOutSchema"];
                 };
             };
         };
@@ -393,9 +436,7 @@ export interface operations {
     };
     core_api_list_my_shops_endpoint: {
         parameters: {
-            query: {
-                user_id: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -408,7 +449,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ShopOut"][];
+                    "application/json": components["schemas"]["StoreOutSchema"][];
                 };
             };
         };
@@ -524,7 +565,43 @@ export interface operations {
             };
         };
     };
-    mytoken_obtain_token_fe0c5bf6: {
+    core_api_refresh_token_auth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    core_api_initdata_auth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    mytoken_obtain_token_e2594494: {
         parameters: {
             query?: never;
             header?: never;

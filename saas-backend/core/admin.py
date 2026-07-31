@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import TelegramUser, Tariff, CustomerProfile, OwnerProfile, Shop, Product, CartItem, Order, OrderHistory, OrderItem, ProductImage
+from .models import TelegramUser, CustomerProfile, OwnerProfile, Shop, Product, CartItem, Order, OrderHistory, OrderItem, ProductImage
 
 # Register your models here.
 
@@ -37,7 +37,6 @@ class TelegramUserAdmin(UserAdmin):
 
 admin.site.register(CustomerProfile)
 admin.site.register(OwnerProfile)
-admin.site.register(Tariff)
 admin.site.register(Shop)
 admin.site.register(Product)
 admin.site.register(CartItem)

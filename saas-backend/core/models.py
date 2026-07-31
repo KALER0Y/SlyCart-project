@@ -81,35 +81,6 @@ class TelegramUser(AbstractBaseUser, PermissionsMixin):
         return f"Пользователь: {self.user_id} ({self.role})"
 
 
-class Tariff(models.Model):
-
-    plan = models.CharField(max_length=50, 
-                            verbose_name="Тариф")
-    
-    max_products = models.PositiveSmallIntegerField(verbose_name="Лимит товаров",
-                                                    default=10)
-
-    max_shops = models.PositiveSmallIntegerField(verbose_name="Лимит магазинов",
-                                                 default=1)
-
-    # max_digit - максимальное количество цифр в числе, decimal_places - знаки после запятой
-    price = models.DecimalField(max_digits=10,
-                                decimal_places=2, 
-                                verbose_name="Цена тарифа",
-                                default=0.00)
-    
-    description = models.TextField(verbose_name="Описание тарифа", 
-                                   blank=True, 
-                                   null=True)
-    # blank позволяет быть полю пустым, а null будет сохранять пустые значение как NULL
-
-    class Meta:
-        verbose_name = "Тариф"
-        verbose_name_plural = "Тарифы" # Чтобы в админке не было "Тарифs"
-
-    def __str__(self):
-        return f'Тариф: {self.plan} -> Цена: {self.price}₽, Лимиты(товары/магазины): {self.max_products}/{self.max_shops}'
-
 
 class CustomerProfile(models.Model):
 
@@ -149,12 +120,7 @@ class OwnerProfile(models.Model):
                                  on_delete=models.CASCADE,
                                  related_name="owner_profile",
                                  verbose_name="Владелец")
-    
-    # forein key в тарифах - база, потому что один тариф для всех пользователей, а не для одного.
-    tariff = models.ForeignKey(to=Tariff,
-                               on_delete=models.SET_NULL,
-                               null=True,
-                               verbose_name="Тариф")
+
     
     brand_name = models.CharField(max_length=120,
                                   null=True,
@@ -206,21 +172,17 @@ class Shop(models.Model):
     # Все о пользователе(тариф, дата регистрации, телеграм айди и т.д)
     # on_delete работает на тех, на кого мы ссылаемся
   
-    shop_name = models.CharField(max_length=100,
-                                 verbose_name="Название магазина")
-    
-    shop_link = models.SlugField(unique=True, 
-                                 verbose_name="Ссылка (slug)")
-    
-    def clean(self): # Метод clean нужен для валидации данных
-        if self.owner.owner.role != 'owner': # "Костыль" для админки
-            raise ValidationError(
-                f"Пользователь {self.owner.owner.role} не является владельцем и не может создать магазин"
-            )
-        
-    def save(self, *args, **kwargs):
-        self.full_clean() # Принудительно вызвать метод clean, не только в админке, а везде
-        super().save(*args, **kwargs)
+    name = models.CharField(max_length=100,
+                                 verbose_name="Название магазина",
+                                 null=False)
+
+    description = models.TextField(verbose_name="Описание магазина",
+                                        null=False)
+
+
+    logo_url = models.TextField( 
+        verbose_name="Путь на логотип"
+    )
 
 
     class Meta:
@@ -229,7 +191,7 @@ class Shop(models.Model):
 
         
     def __str__(self):
-        return f"Магазин: {self.shop_name}, link = {self.shop_link}"
+        return f"Магазин: {self.name}"
     
 
 class Product(models.Model):
@@ -257,6 +219,9 @@ class Product(models.Model):
     
     stock = models.PositiveIntegerField(verbose_name="Осталось товара", 
                                         default=1)
+
+    image = models.TextField(verbose_name="Путь до файла")
+    
 
     class Meta:
         verbose_name = "Товар"

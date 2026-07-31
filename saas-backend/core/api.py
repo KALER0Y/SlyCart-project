@@ -7,7 +7,7 @@ from typing import List
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 
-from ninja import Router, File
+from ninja import Form, Router, File
 from ninja.errors import HttpError
 from ninja.pagination import paginate
 from ninja.files import UploadedFile
@@ -19,6 +19,8 @@ from ninja_jwt.tokens import RefreshToken, AccessToken
 from ninja_jwt.exceptions import TokenError
 # Этот класс работает с безопасностью кук. Автоматически парсит заголовки браузера и ищет там куки
 from ninja.security import APIKeyCookie, APIKeyHeader
+from django.middleware.csrf import get_token
+
 
 from .exceptions import NegativePriceError, SignatureError
 from .utils.set_cookie import set_auth_cookie
@@ -37,154 +39,17 @@ from .services import (
 from .schemas import (
     TelegramUserOut, 
     TelegramUserIn,
-    ShopIn,
-    ShopOut,
+    StoreOutSchema,
+    StoreCreateSchema,
     ProductIn,
     ProductOut,
     ProductPatch
     )
-
+from .models import TelegramUser
 
 logger = logging.getLogger(__name__)
 
 core_router = Router()
-
-
-DEBUG = os.getenv("DEBUG", "False") == "True" 
-# Эндпоинты (Endpoints) — это, по сути, «адреса», 
-# по которым твой фронтенд (или Telegram-бот) будет обращаться к твоему бэкенду за данными.
-
-@core_router.post("/register", response={201: TelegramUserOut}, tags=["POST"]) # Что то похожее на эндпоинт
-def create_user_endpoint(request, data: TelegramUserIn, response: HttpResponse): # Что будет принимать функция
-    try:
-        valid_user = verify_telegram_initdata(data.init_data)
-
-        user = create_user(
-            telegram_id=valid_user.get('id'),
-            role=data.role
-        )
-
-        
-    except (UserAlreadyExistsError, PhoneNumberAlreadyTakenError, BrandAlreadyTakenError, SignatureError) as e:
-        raise HttpError(400, str(e))
-    except (EmptyPhoneNumberError, InvalidRoleError) as e:
-        raise HttpError(422, str(e))
-        
-    refresh = RefreshToken.for_user(user)
-    csrf_token = str(uuid.uuid4()) # Лучше перевести в string
-    # Пример: response.set_cookie(key="csrf_token", value=csrf_token, httponly=False)
-    # Сервер кладет в куки случайную строку. 
-    # Важно: httponly=False. 
-    # Это значит, что твой React-код может прочитать эту куку. 
-    # Левый сайт прочитать куки другого домена не может из-за политики безопасности браузеров (SOP).
-
-    access = refresh.access_token
-    access["role"] = user.role
-    # Эта функция будет ложить куки в HttpResponse автоматически
-    set_auth_cookie(
-        response=response, 
-        access_token=str(access), # Превращаем в строку здесь
-        refresh_token=str(refresh),
-        csrf_token=csrf_token, 
-        debug_status=DEBUG,
-        )
-
-    return user
-    
-
-@core_router.post('/shop', response=ShopOut, tags=["POST"])
-def create_shop_endpoint(request, data: ShopIn):
-
-    owner = get_object_or_404(
-        OwnerProfile, 
-        owner__user_id=data.owner
-        )
-
-    shop = create_shop(
-        user=owner,
-        name=data.shop_name,
-        link=data.shop_link
-    )
-
-    return shop
-
-@core_router.post("/product", response=ProductOut, tags=["POST"])
-def create_product_endpoint(request, data: ProductIn, images: List[UploadedFile] = File()):
-
-    shop_obj = get_object_or_404(
-        Shop, 
-        id=data.shop, 
-        owner__owner__user_id=data.user_id
-        )
-
-    product = create_product(
-        shop=shop_obj,
-        title=data.title,
-        description=data.description,
-        images=images,
-        price=data.price,
-        stock=data.stock,
-        is_active=data.is_active
-    )
-
-    return product
-
-@core_router.get("/my-shops", response=List[ShopOut], tags=["GET"])
-def list_my_shops_endpoint(request, user_id: int):
-
-    return Shop.objects.filter(owner__owner__user_id=user_id).select_related('owner__owner')
-
-@core_router.get('/shops/{shop_id}/products', response=List[ProductOut], tags=["GET"])
-def product_list_endpoint(request, shop_id: uuid.UUID):
-    # ninja легче работать напрямую через QuerySet, чем через переменные. Переменные могут вызывать ошибки
-    return Product.objects.filter(shop=shop_id, is_active=True)
-    # removed .select_related('shop') as ProductOut now uses shop_id directly, avoiding extra JOIN/query
-
-
-@core_router.patch("/product/{product_id}", response=ProductOut, tags=["PATCH"])
-def edit_products_endpoint(request, product_id: int , data: ProductPatch):
-
-    product = get_object_or_404(
-            Product, 
-            id=product_id, 
-            shop__owner__owner__user_id=data.user_id
-        )
-
-    update_data = data.dict(exclude_unset=True)
-
-    update_data.pop("user_id", None)
-
-    for field, value in update_data.items():
-        if field == "price" and value < 0:
-            raise NegativePriceError("Цена не может быть отрицательной!")
-        setattr(product, field, value)
-    
-
-    product.save()
-
-    return product
-
-@core_router.get("/products", response=List[ProductOut], tags=["GET"])
-@paginate
-def list_products_endpoint(request):
-    return Product.objects.all()
-
-# @core_router.get("/products/{shop_name}", tags=["GET"])
-
-        
-
-@core_router.delete("/product/{product_id}", response={204: None}, tags=["DELETE"])
-def delete_product_endpoint(request, product_id: int, owner_id: int):
-    
-    product = get_object_or_404(
-        Product,
-        id=product_id,
-        shop__owner__owner__user_id=owner_id
-    )
-
-    product.delete()
-
-    return 204, None
 
 class InitDataJWTAuth(APIKeyHeader):
     param_name = "X-TG-Init-Data"
@@ -207,8 +72,6 @@ class InitDataJWTAuth(APIKeyHeader):
 
         except (TelegramUser.DoesNotExist, SignatureError):
             return None
-
-
 
 # Дорабатываем класс Cookie под себя с помощью наследования.
 # APIKeyCookie как робот - может делать 90 процентов работы, но он не знает что именно мне надо
@@ -273,6 +136,160 @@ refresh_auth = RefreshCookieJWTAuth()
 initdata_auth = InitDataJWTAuth()
 
 
+DEBUG = os.getenv("DEBUG", "False") == "True" 
+# Эндпоинты (Endpoints) — это, по сути, «адреса», 
+# по которым твой фронтенд (или Telegram-бот) будет обращаться к твоему бэкенду за данными.
+
+@core_router.post("/register", response={201: TelegramUserOut}, tags=["POST"]) # Что то похожее на эндпоинт
+def create_user_endpoint(request, data: TelegramUserIn, response: HttpResponse): # Что будет принимать функция
+    try:
+        valid_user = verify_telegram_initdata(data.init_data)
+
+        user = create_user(
+            telegram_id=valid_user.get('id'),
+            role=data.role
+        )
+
+        
+    except (UserAlreadyExistsError, PhoneNumberAlreadyTakenError, BrandAlreadyTakenError, SignatureError) as e:
+        raise HttpError(400, str(e))
+    except (EmptyPhoneNumberError, InvalidRoleError) as e:
+        raise HttpError(422, str(e))
+        
+    refresh = RefreshToken.for_user(user)
+    csrf_token = get_token(request) # Лучше перевести в string
+    # Пример: response.set_cookie(key="csrf_token", value=csrf_token, httponly=False)
+    # Сервер кладет в куки случайную строку. 
+    # Важно: httponly=False. 
+    # Это значит, что твой React-код может прочитать эту куку. 
+    # Левый сайт прочитать куки другого домена не может из-за политики безопасности браузеров (SOP).
+
+    access = refresh.access_token
+    access["role"] = user.role
+    # Эта функция будет ложить куки в HttpResponse автоматически
+    set_auth_cookie(
+        response=response, 
+        access_token=str(access), # Превращаем в строку здесь
+        refresh_token=str(refresh),
+        csrf_token=csrf_token, 
+        debug_status=DEBUG,
+        )
+
+    return user
+    
+
+@core_router.post('/shop', 
+                  response=StoreOutSchema, 
+                  auth=[CookieJWTAuth(), RefreshCookieJWTAuth(), InitDataJWTAuth()], 
+                  tags=["POST"])
+def create_shop_endpoint(request, 
+                         data: StoreCreateSchema = Form(...),
+                         logo_file: UploadedFile = File(...)):
+
+    # Достаем залогиненного юзера из реквеста (который распарсил JWT)
+    user = request.auth  
+
+    # Ищем профиль владельца ИМЕННО этого залогиненного юзера
+    owner = get_object_or_404(
+        OwnerProfile,
+        owner=user
+        )
+
+    shop = create_shop(
+        user=owner,
+        name=data.name,
+        description=data.description,
+        logo_file=logo_file
+    )
+
+    return shop
+
+@core_router.post("/shops/{shop_id}/product", 
+                  auth=[CookieJWTAuth(), RefreshCookieJWTAuth(), InitDataJWTAuth()],
+                  response=ProductOut, 
+                  tags=["POST"])
+def create_product_endpoint(request,
+                            shop_id: uuid,
+                            data: ProductIn, 
+                            image: UploadedFile = File()):
+
+    shop = get_object_or_404(Shop, id=shop_id, owner__owner__user_id=request.auth.user_id)
+
+    product = create_product(
+        shop=shop,
+        title=data.title,
+        description=data.description,
+        price=data.price,
+        image=image,
+        is_active=data.is_active,
+        stock=data.stock
+    )
+
+    return product
+
+
+@core_router.get("/my-shops", response=List[StoreOutSchema],
+                 auth=[CookieJWTAuth(), RefreshCookieJWTAuth(), InitDataJWTAuth()],
+                 tags=["GET"])
+def list_my_shops_endpoint(request):
+
+    user = request.auth.user_id
+
+    return Shop.objects.filter(owner__owner__user_id=user).select_related('owner__owner')
+
+@core_router.get('/shops/{shop_id}/products', response=List[ProductOut], tags=["GET"])
+def product_list_endpoint(request, shop_id: uuid.UUID):
+    # ninja легче работать напрямую через QuerySet, чем через переменные. Переменные могут вызывать ошибки
+    return Product.objects.filter(shop=shop_id, is_active=True)
+    # removed .select_related('shop') as ProductOut now uses shop_id directly, avoiding extra JOIN/query
+
+
+@core_router.patch("/product/{product_id}", response=ProductOut, tags=["PATCH"])
+def edit_products_endpoint(request, product_id: int , data: ProductPatch):
+
+    product = get_object_or_404(
+            Product, 
+            id=product_id, 
+            shop__owner__owner__user_id=data.user_id
+        )
+
+    update_data = data.dict(exclude_unset=True)
+
+    update_data.pop("user_id", None)
+
+    for field, value in update_data.items():
+        if field == "price" and value < 0:
+            raise NegativePriceError("Цена не может быть отрицательной!")
+        setattr(product, field, value)
+    
+
+    product.save()
+
+    return product
+
+@core_router.get("/products", response=List[ProductOut], tags=["GET"])
+@paginate
+def list_products_endpoint(request):
+    return Product.objects.all()
+
+# @core_router.get("/products/{shop_name}", tags=["GET"])
+
+        
+
+@core_router.delete("/product/{product_id}", response={204: None}, tags=["DELETE"])
+def delete_product_endpoint(request, product_id: int, owner_id: int):
+    
+    product = get_object_or_404(
+        Product,
+        id=product_id,
+        shop__owner__owner__user_id=owner_id
+    )
+
+    product.delete()
+
+    return 204, None
+
+
 @core_router.get("/me", auth=cookie_auth, tags=["Auth"])
 def jwt_token_auth(request):
         
@@ -313,7 +330,7 @@ def refresh_token_auth(request):
         response=response, 
         access_token=str(new_access), # Превращаем в строку здесь
         refresh_token=str(new_refresh),
-        csrf_token=csrf_token if csrf_token else str(uuid.uuid4()), 
+        csrf_token=csrf_token if csrf_token else get_token(request), 
         debug_status=DEBUG,
         )
     
@@ -330,7 +347,7 @@ def initdata_auth(request):
 
     user = request.auth
     refresh = RefreshToken.for_user(user)
-    csrf_token = str(uuid.uuid4()) # Лучше перевести в string
+    csrf_token = get_token(request) # Лучше перевести в string
 
     response = Response(data)
 

@@ -49,7 +49,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ShopOut"
+                  "$ref": "#/components/schemas/StoreOutSchema"
                 }
               }
             }
@@ -60,14 +60,46 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ShopIn"
+                "title": "MultiPartBodyParams",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "title": "Name",
+                    "type": "string"
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string"
+                  },
+                  "logo_file": {
+                    "format": "binary",
+                    "title": "Logo File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "logo_file"
+                ]
               }
             }
           },
           "required": true
-        }
+        },
+        "security": [
+          {
+            "CookieJWTAuth": []
+          },
+          {
+            "RefreshCookieJWTAuth": []
+          },
+          {
+            "InitDataJWTAuth": []
+          }
+        ]
       }
     },
     "/api/core/product": {
@@ -124,17 +156,7 @@
       "get": {
         "operationId": "core_api_list_my_shops_endpoint",
         "summary": "List My Shops Endpoint",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "user_id",
-            "schema": {
-              "title": "User Id",
-              "type": "integer"
-            },
-            "required": true
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "OK",
@@ -142,7 +164,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/ShopOut"
+                    "$ref": "#/components/schemas/StoreOutSchema"
                   },
                   "title": "Response",
                   "type": "array"
@@ -153,6 +175,17 @@
         },
         "tags": [
           "GET"
+        ],
+        "security": [
+          {
+            "CookieJWTAuth": []
+          },
+          {
+            "RefreshCookieJWTAuth": []
+          },
+          {
+            "InitDataJWTAuth": []
+          }
         ]
       }
     },
@@ -332,9 +365,49 @@
         ]
       }
     },
+    "/api/core/refresh": {
+      "get": {
+        "operationId": "core_api_refresh_token_auth",
+        "summary": "Refresh Token Auth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "RefreshCookieJWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/core/login": {
+      "get": {
+        "operationId": "core_api_initdata_auth",
+        "summary": "Initdata Auth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "InitDataJWTAuth": []
+          }
+        ]
+      }
+    },
     "/api/auth/pair": {
       "post": {
-        "operationId": "mytoken_obtain_token_fe0c5bf6",
+        "operationId": "mytoken_obtain_token_e2594494",
         "summary": "Obtain Token",
         "parameters": [],
         "responses": {
@@ -411,62 +484,51 @@
         "title": "TelegramUserIn",
         "type": "object"
       },
-      "ShopOut": {
+      "StoreOutSchema": {
         "properties": {
-          "owner_id": {
-            "title": "Owner Id",
-            "type": "integer"
-          },
           "id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "shop_name": {
-            "maxLength": 100,
-            "title": "Название магазина",
+            "format": "uuid",
+            "title": "Id",
             "type": "string"
           },
-          "shop_link": {
-            "title": "Ссылка (slug)",
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "logo_url": {
+            "title": "Logo Url",
             "type": "string"
           }
         },
         "required": [
-          "owner_id",
-          "shop_name",
-          "shop_link"
+          "id",
+          "name",
+          "description",
+          "logo_url"
         ],
-        "title": "ShopOut",
+        "title": "StoreOutSchema",
         "type": "object"
       },
-      "ShopIn": {
+      "StoreCreateSchema": {
         "properties": {
-          "owner": {
-            "title": "Owner",
-            "type": "integer"
-          },
-          "shop_name": {
-            "title": "Shop Name",
+          "name": {
+            "title": "Name",
             "type": "string"
           },
-          "shop_link": {
-            "title": "Shop Link",
+          "description": {
+            "title": "Description",
             "type": "string"
           }
         },
         "required": [
-          "owner",
-          "shop_name"
+          "name",
+          "description"
         ],
-        "title": "ShopIn",
+        "title": "StoreCreateSchema",
         "type": "object"
       },
       "ProductOut": {
@@ -720,15 +782,10 @@
           "user_id": {
             "title": "User Id",
             "type": "integer"
-          },
-          "phone_number": {
-            "title": "Phone Number",
-            "type": "string"
           }
         },
         "required": [
-          "user_id",
-          "phone_number"
+          "user_id"
         ],
         "title": "MyTokenObtainPairSchema",
         "type": "object"
@@ -739,6 +796,16 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "access"
+      },
+      "RefreshCookieJWTAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refresh"
+      },
+      "InitDataJWTAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-TG-Init-Data"
       }
     }
   },
