@@ -1,5 +1,5 @@
 "use client"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { components } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -17,14 +17,16 @@ import { Tabs, TabsContent} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox"
-import { ImageIcon, PackagePlus, X } from "lucide-react";
+import { ChevronLeft, ImageIcon, Minus, PackagePlus, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 import api, { authApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 export type ProductIn = components['schemas']['ProductIn']
+export type ProductOut = components['schemas']['ProductOut']
 
 export default function Products() {
 
     const params = useParams();
+    const router = useRouter();
     const shopId = params.shop_id;
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -40,6 +42,10 @@ export default function Products() {
     const [price, setPrice] = useState("");
     const [stock, setStock] = useState("1")
     const [isActive, setActive] = useState<boolean>(true)
+
+    // Корзина покупателя
+    const [cart, setCart] = useState<Array<{ product: ProductOut; quantity: number }>>([]);
+    const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
     const {data: shop, isLoading: isShopLoading} = useQuery({
         queryKey: ["shop", shopId],
@@ -90,26 +96,84 @@ export default function Products() {
         setFile(null);
         setPreviewUrl(null);
     }
-    if (isShopLoading || isProductsLoading) {
-        return (
-            <div className="w-full px-4 pt-4 font-mono">
-                <div className="mb-4 h-4 w-32 animate-pulse rounded bg-zinc-800" />
-                <div className="grid grid-cols-2 gap-4">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3">
-                            <div className="aspect-square w-full animate-pulse rounded-xl bg-zinc-800" />
-                            <div className="mt-3 h-3 w-3/4 animate-pulse rounded bg-zinc-800" />
-                            <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-zinc-800/70" />
-                        </div>
-                    ))}
-                </div>
-            </div>
+
+    // --- Логика корзины ---
+    const handleAddToCart = (item: ProductOut) => {
+        setCart((prev) => {
+            const existing = prev.find((entry) => entry.product.id === item.id);
+            if (existing) {
+                return prev.map((entry) =>
+                    entry.product.id === item.id
+                        ? { ...entry, quantity: entry.quantity + 1 }
+                        : entry
+                );
+            }
+            return [...prev, { product: item, quantity: 1 }];
+        });
+    };
+
+    const handleIncrement = (productId: number) => {
+        setCart((prev) =>
+            prev.map((entry) =>
+                entry.product.id === productId
+                    ? { ...entry, quantity: entry.quantity + 1 }
+                    : entry
+            )
         );
-        }
-    
+    };
+
+    const handleDecrement = (productId: number) => {
+        setCart((prev) =>
+            prev.map((entry) =>
+                entry.product.id === productId
+                    ? { ...entry, quantity: Math.max(1, entry.quantity - 1) }
+                    : entry
+            )
+        );
+    };
+
+    const handleRemoveFromCart = (productId: number) => {
+        setCart((prev) => prev.filter((entry) => entry.product.id !== productId));
+    };
+
+    const handleCheckout = () => {
+        toast.success("Заказ оформлен!");
+        setCart([]);
+        setIsCartOpen(false);
+    };
+
+    const cartCount = cart.reduce((sum, entry) => sum + entry.quantity, 0);
+    const cartTotal = cart.reduce((sum, entry) => sum + entry.quantity * Number(entry.product.price), 0);
+
     return (
         <div className="relative flex flex-col items-center justify-center text-center">
-            {product?.length === 0 ? (
+            {/* Шапка страницы */}
+            <div className="mb-2 flex w-full items-center px-4 pt-4 font-mono">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => router.back()}
+                    className="flex items-center gap-1 rounded-lg px-2 text-sm font-bold text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                    Назад
+                </Button>
+            </div>
+
+            {isShopLoading || isProductsLoading ? (
+                <div className="w-full px-4 pt-2 font-mono">
+                    <div className="mb-4 h-4 w-32 animate-pulse rounded bg-zinc-800" />
+                    <div className="grid grid-cols-2 gap-4">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3">
+                                <div className="aspect-square w-full animate-pulse rounded-xl bg-zinc-800" />
+                                <div className="mt-3 h-3 w-3/4 animate-pulse rounded bg-zinc-800" />
+                                <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-zinc-800/70" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : product?.length === 0 ? (
                 <>
                     {shop?.is_owner === true ? (
                         <>
@@ -140,7 +204,7 @@ export default function Products() {
                     )}
                 </>
              ) : (
-                <div className="w-full px-4 pb-24 text-left font-mono mt-4">
+                <div className="w-full px-4 pb-24 text-left font-mono mt-2">
                 <h2 className="mb-4 border-b border-zinc-800 pb-2 text-sm font-bold tracking-wider text-zinc-400 uppercase">
                     Товары ({product?.length || 0})
                 </h2>
@@ -180,6 +244,18 @@ export default function Products() {
                                 : "Нет в наличии"}
                             </span>
                         </div>
+                        {/* Кнопка добавления в корзину — только для покупателей */}
+                        {!shop?.is_owner && (
+                            <Button
+                                type="button"
+                                onClick={() => handleAddToCart(product)}
+                                disabled={!product.is_active || product.stock <= 0}
+                                className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-cyan-500 text-xs font-bold text-white transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-600"
+                            >
+                                <ShoppingCart className="h-3.5 w-3.5" />
+                                В корзину
+                            </Button>
+                        )}
                         </div>
                     </div>
                     ))}
@@ -196,6 +272,20 @@ export default function Products() {
                     </div>
                 </div>
             ) }
+
+            {/* Плавающая плашка корзины — только у покупателей, когда в корзине что-то есть */}
+            {cart.length > 0 && (
+                <button
+                    type="button"
+                    onClick={() => setIsCartOpen(true)}
+                    className="fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-4 font-mono shadow-lg shadow-black/40 transition-colors hover:bg-zinc-800"
+                >
+                    <span className="text-sm font-bold text-zinc-100">
+                        🛒 Корзина ({cartCount}) — <span className="text-cyan-400">{cartTotal} ₽</span>
+                    </span>
+                </button>
+            )}
+
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
                     <DialogContent className="max-w-md border-zinc-800 bg-zinc-950 font-mono">
                         <DialogHeader>
@@ -308,6 +398,82 @@ export default function Products() {
                         </Button>
                         </form>
                         </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Модалка корзины покупателя */}
+                <Dialog open={isCartOpen} onOpenChange={setIsCartOpen}>
+                    <DialogContent className="max-w-md border-zinc-800 bg-zinc-950 font-mono">
+                        <DialogHeader>
+                            <DialogTitle className="text-zinc-100">Корзина</DialogTitle>
+                            <DialogDescription className="text-zinc-500">
+                                Проверьте товары перед оформлением заказа.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto py-2 pr-1">
+                            {cart.length === 0 ? (
+                                <p className="py-8 text-center text-sm text-zinc-500">Корзина пуста</p>
+                            ) : (
+                                cart.map((entry) => (
+                                    <div key={entry.product.id} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
+                                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+                                            <img src={entry.product.image} alt={entry.product.title} className="h-full w-full object-cover" />
+                                        </div>
+                                        <div className="flex flex-1 flex-col overflow-hidden text-left">
+                                            <p className="truncate text-sm font-bold text-zinc-100">{entry.product.title}</p>
+                                            <p className="text-xs font-bold text-cyan-400">{entry.product.price} ₽</p>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 rounded-full border border-zinc-800 text-zinc-300 hover:bg-zinc-800"
+                                                onClick={() => handleDecrement(entry.product.id as number)}
+                                            >
+                                                <Minus className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <span className="w-5 text-center text-sm text-zinc-100">{entry.quantity}</span>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 rounded-full border border-zinc-800 text-zinc-300 hover:bg-zinc-800"
+                                                onClick={() => handleIncrement(entry.product.id as number)}
+                                            >
+                                                <Plus className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 rounded-full text-zinc-500 hover:bg-zinc-800 hover:text-red-400"
+                                            onClick={() => handleRemoveFromCart(entry.product.id as number)}
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {cart.length > 0 && (
+                            <div className="flex flex-col gap-3 border-t border-zinc-800 pt-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-zinc-400">Итого</span>
+                                    <span className="text-base font-bold text-cyan-400">{cartTotal} ₽</span>
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={handleCheckout}
+                                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition-colors hover:bg-cyan-600"
+                                >
+                                    Оформить заказ
+                                </Button>
+                            </div>
+                        )}
                     </DialogContent>
                 </Dialog>
         </div>
