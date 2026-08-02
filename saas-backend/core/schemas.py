@@ -53,15 +53,15 @@ class ProductIn(Schema):
 
 
 class ProductOut(ModelSchema):
-
-    price: Decimal = Field(..., max_digits=12, decimal_places=2, json_schema_extra={"example": "0.00"})
-
-    shop_id: UUID = Field(..., alias="shop_id")
-    # Always prefer `alias="field_id"` over `alias="field.id"` in schemas when only the ID is needed.
-
     class Meta:
         model = Product
-        fields = ["id", "image" ,"title", "description", "price", "stock", "is_active"]
+        fields = ["id", 
+                  "image",
+                  "title", 
+                  "description", 
+                  "price", 
+                  "stock", 
+                  "is_active"]
 
 class ProductPatch(Schema):
     user_id: int
@@ -81,6 +81,7 @@ class StoreOutSchema(Schema):
     name: str
     description: str
     logo_url: str # В ответе всегда отдаем готовую ссылку на сохраненный файл
+    is_owner: bool = False
 
 class MyTokenObtainPairSchema(Schema):
 

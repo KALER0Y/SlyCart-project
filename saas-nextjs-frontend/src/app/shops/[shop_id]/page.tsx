@@ -17,7 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox"
 import { ImageIcon, PackagePlus, X } from "lucide-react";
-import api from "@/lib/api";
+import api, { authApi } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 export type ProductIn = components['schemas']['ProductIn']
 
@@ -39,6 +40,18 @@ export default function Products() {
     const [price, setPrice] = useState("");
     const [stock, setStock] = useState("1")
     const [isActive, setActive] = useState<boolean>(true)
+
+    const {data: shop, isLoading: isShopLoading} = useQuery({
+        queryKey: ["shop", shopId],
+        queryFn: () => authApi.get_shop_owner(shopId as string),
+        enabled: Boolean(shopId)
+    })
+
+    const {data: product, isLoading: isProductsLoading} = useQuery({
+        queryKey: ["products", shopId],
+        queryFn: () => authApi.get_products(shopId as string),
+        enabled: Boolean(shopId) // Делает сетевой запрос только когда достали shop_id
+    })
 
     const handleSubmit = async (e: React.SubmitEvent) => {
         e.preventDefault(); // Чтобы не перезагружать страницу
@@ -80,26 +93,109 @@ export default function Products() {
         setFile(null);
         setPreviewUrl(null);
     }
+
+    if (isShopLoading || isProductsLoading) {
+        return (
+            <div className="flex min-h-[60vh] w-full items-center justify-center font-mono text-sm text-zinc-500">
+            Загрузка магазина...
+            </div>
+        );
+        }
     
     return (
         <div className="flex flex-col items-center justify-center text-center">
-            <div className="mt-20 flex h-20 w-20 items-center justify-center gap-8 rounded-2xl border border-zinc-800 bg-zinc-900">
-                {/* <p>{shopId}</p> */}
-                <PackagePlus className="h-8 w-8 text-zinc-400" />
-            </div>
-                <div className="mt-4 flex flex-col items-center justify-center gap-4 font-mono">
-                    <p className="text-2xl font-bold">Пока что товаров нет</p>
-                    <p className="text-[18px] text-gray-500">
-                    Создайте свой первый товар для вашего нового магазина.
-                    </p>
+            {product?.length === 0 ? (
+                <>
+                    {shop?.is_owner === true ? (
+                        <>
+                            <div className="mt-20 flex h-20 w-20 items-center justify-center gap-8 rounded-2xl border border-zinc-800 bg-zinc-900">
+                                {/* <p>{shopId}</p> */}
+                                <PackagePlus className="h-8 w-8 text-zinc-400" />
+                            </div>
+                            <div className="mt-4 flex flex-col items-center justify-center gap-4 font-mono">
+                                <p className="text-2xl font-bold">Пока что товаров нет</p>
+                                <p className="text-[18px] text-gray-500">
+                                Создайте свой первый товар для вашего нового магазина.
+                                </p>
 
-                    <Button
-                    className="mt-3 rounded-[15px] bg-cyan-500 px-10 py-6 text-[18px] text-white font-bold hover:bg-cyan-600"
-                    onClick={() => setIsOpen(true)}
+                                <Button
+                                className="mt-3 rounded-[15px] bg-cyan-500 px-10 py-6 text-[18px] text-white font-bold hover:bg-cyan-600"
+                                onClick={() => setIsOpen(true)}
+                                >
+                                + Создать товар 
+                                </Button>
+                            </div>                 
+                        </> 
+                    ) : (
+                    <div className="flex min-h-[60vh] w-full flex-col items-center justify-center p-6 text-center font-mono">
+                    <p className="text-base text-zinc-400 font-bold">
+                        Зайдите позже, владелец еще не добавил товары в этот магазин.
+                    </p>
+                    </div>
+                    )}
+                </>
+             ) : (
+                <div className="w-full px-4 text-left font-mono mt-4">
+                <h2 className="mb-4 border-b border-zinc-800 pb-2 text-sm font-bold tracking-wider text-zinc-400 uppercase">
+                    Товары ({product?.length || 0})
+                </h2>
+
+                {/* Сетка товаров */}
+                <div className="grid grid-cols-2 gap-4">
+                    {product?.map((product) => (
+                    <div
+                        key={product.id}
+                        className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3 transition-all hover:border-zinc-700 hover:bg-zinc-900"
                     >
-                    + Создать товар 
-                    </Button>
+                        {/* Картинка товара */}
+                        <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-zinc-800">
+                        <img
+                            src={product.image}
+                            alt={product.title}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        </div>
+
+                        {/* Контент товара */}
+                        <div className="mt-3 flex flex-col flex-1 justify-between">
+                        <div>
+                            <h3 className="truncate text-base font-bold text-zinc-100">
+                            {product.title}
+                            </h3>
+                            <p className="mt-1 line-clamp-2 text-xs text-zinc-400">
+                            {product.description}
+                            </p>
+                        </div>
+
+                        {/* Цена и наличие */}
+                        <div className="mt-3 flex items-center justify-between border-t border-zinc-800/80 pt-2">
+                            <span className="text-sm font-bold text-cyan-400">
+                            {product.price} ₽
+                            </span>
+
+                            <span className="text-[10px] text-zinc-500">
+                            {product.is_active && product.stock > 0
+                                ? `В остатке: ${product.stock}`
+                                : "Нет в наличии"}
+                            </span>
+                        </div>
+                        </div>
+                    </div>
+                    ))}
                 </div>
+                    <div>
+                        {shop?.is_owner && (
+                        <Button
+                            className="absolute bottom-6 right-3 z-50 h-12 rounded-full bg-cyan-500 text-white font-bold shadow-lg"
+                            onClick={() => setIsOpen(true)}
+                            >
+                            + Создать товар 
+                        </Button>
+                        )}
+                    </div>
+                </div>
+            ) }
+
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
                     <DialogContent className="max-w-md">
                         <DialogHeader>

@@ -156,7 +156,7 @@ class OwnerProfile(models.Model):
         verbose_name_plural = "Владельцы"
 
     def __str__(self):
-        return f'{self.owner}, {self.tariff}, бренд: {self.brand_name}'
+        return f'{self.owner}, бренд: {self.brand_name}'
     
 
 class Shop(models.Model):

@@ -227,6 +227,20 @@ def create_product_endpoint(request,
 
     return product
 
+@core_router.get("/shops/{shop_id}",
+                 auth=[CookieJWTAuth(), RefreshCookieJWTAuth(), InitDataJWTAuth()],
+                 response=StoreOutSchema,
+                 )
+def define_owner_endpoint(request, shop_id: uuid.UUID):
+
+    # 1) Ищем магазин
+    shop = get_object_or_404(Shop, id=shop_id)
+    # 2) Проверяем является ли аутентифицированный пользователь владельцем и записываем в ОЗУ
+    shop.is_owner = (shop.owner.owner_id == request.auth.user_id)
+    # 3) Возвращаем магазин
+    return shop
+
+
 
 @core_router.get("/my-shops", response=List[StoreOutSchema],
                  auth=[CookieJWTAuth(), RefreshCookieJWTAuth(), InitDataJWTAuth()],
@@ -235,12 +249,12 @@ def list_my_shops_endpoint(request):
 
     user = request.auth.user_id
 
-    return Shop.objects.filter(owner__owner__user_id=user).select_related('owner__owner')
+    return Shop.objects.filter(owner__owner_id=user)
 
 @core_router.get('/shops/{shop_id}/products', response=List[ProductOut], tags=["GET"])
 def product_list_endpoint(request, shop_id: uuid.UUID):
     # ninja легче работать напрямую через QuerySet, чем через переменные. Переменные могут вызывать ошибки
-    return Product.objects.filter(shop=shop_id, is_active=True)
+    return Product.objects.filter(shop_id=shop_id)
     # removed .select_related('shop') as ProductOut now uses shop_id directly, avoiding extra JOIN/query
 
 
@@ -267,10 +281,14 @@ def edit_products_endpoint(request, product_id: int , data: ProductPatch):
 
     return product
 
-@core_router.get("/products", response=List[ProductOut], tags=["GET"])
+@core_router.get("/all-shops", response=List[StoreOutSchema], tags=["GET"])
+def list_shops_endpoint(request):
+    return Shop.objects.all()
+
+@core_router.get("/products/{shop_id}", response=List[ProductOut], tags=["GET"])
 @paginate
-def list_products_endpoint(request):
-    return Product.objects.all()
+def list_products_endpoint(request, shop_id: uuid.UUID):
+    return Product.objects.filter(shop_id=shop_id)
 
 # @core_router.get("/products/{shop_name}", tags=["GET"])
 

@@ -39,7 +39,7 @@ export default function ShopInterface() {
 
   const { data } = useQuery({
     queryKey: ['myshops'],
-    queryFn: authApi.my_shops
+    queryFn: authApi.get_shops
   });
 
 

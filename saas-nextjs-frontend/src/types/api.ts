@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/core/shops/{shop_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Define Owner Endpoint */
+        get: operations["core_api_define_owner_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/core/my-shops": {
         parameters: {
             query?: never;
@@ -107,7 +124,24 @@ export interface paths {
         patch: operations["core_api_edit_products_endpoint"];
         trace?: never;
     };
-    "/api/core/products": {
+    "/api/core/all-shops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Shops Endpoint */
+        get: operations["core_api_list_shops_endpoint"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/core/products/{shop_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -185,7 +219,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Obtain Token */
-        post: operations["mytoken_obtain_token_c99b5f19"];
+        post: operations["mytoken_obtain_token_a883ed9d"];
         delete?: never;
         options?: never;
         head?: never;
@@ -230,6 +264,11 @@ export interface components {
             description: string;
             /** Logo Url */
             logo_url: string;
+            /**
+             * Is Owner
+             * @default false
+             */
+            is_owner: boolean;
         };
         /** StoreCreateSchema */
         StoreCreateSchema: {
@@ -240,16 +279,6 @@ export interface components {
         };
         /** ProductOut */
         ProductOut: {
-            /**
-             * Price
-             * @example 0.00
-             */
-            price: string;
-            /**
-             * Shop Id
-             * Format: uuid
-             */
-            shop_id: string;
             /** ID */
             id?: number | null;
             /** Путь до файла */
@@ -258,6 +287,8 @@ export interface components {
             title: string;
             /** Описание товара */
             description: string;
+            /** Цена товара */
+            price: string;
             /**
              * Осталось товара
              * @default 1
@@ -413,12 +444,24 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": {
+                    /** Title */
+                    title: string;
+                    /** Description */
+                    description: string;
+                    /** Price */
+                    price: number | string;
+                    /** Stock */
+                    stock: number;
+                    /**
+                     * Is Active
+                     * @default true
+                     */
+                    is_active?: boolean;
                     /**
                      * Image
                      * Format: binary
                      */
                     image: string;
-                    data: components["schemas"]["ProductIn"];
                 };
             };
         };
@@ -430,6 +473,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+        };
+    };
+    core_api_define_owner_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shop_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreOutSchema"];
                 };
             };
         };
@@ -524,6 +589,26 @@ export interface operations {
             };
         };
     };
+    core_api_list_shops_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreOutSchema"][];
+                };
+            };
+        };
+    };
     core_api_list_products_endpoint: {
         parameters: {
             query?: {
@@ -531,7 +616,9 @@ export interface operations {
                 offset?: number;
             };
             header?: never;
-            path?: never;
+            path: {
+                shop_id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -601,7 +688,7 @@ export interface operations {
             };
         };
     };
-    mytoken_obtain_token_c99b5f19: {
+    mytoken_obtain_token_a883ed9d: {
         parameters: {
             query?: never;
             header?: never;

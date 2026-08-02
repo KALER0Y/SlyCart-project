@@ -137,26 +137,98 @@
           "content": {
             "multipart/form-data": {
               "schema": {
+                "title": "MultiPartBodyParams",
+                "type": "object",
                 "properties": {
+                  "title": {
+                    "title": "Title",
+                    "type": "string"
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string"
+                  },
+                  "price": {
+                    "anyOf": [
+                      {
+                        "minimum": 0.0,
+                        "type": "number"
+                      },
+                      {
+                        "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,11}0*$)\\d{0,8}\\.\\d{0,2}0*$)",
+                        "type": "string"
+                      }
+                    ],
+                    "title": "Price"
+                  },
+                  "stock": {
+                    "exclusiveMinimum": 0,
+                    "title": "Stock",
+                    "type": "integer"
+                  },
+                  "is_active": {
+                    "default": true,
+                    "title": "Is Active",
+                    "type": "boolean"
+                  },
                   "image": {
                     "format": "binary",
                     "title": "Image",
                     "type": "string"
-                  },
-                  "data": {
-                    "$ref": "#/components/schemas/ProductIn"
                   }
                 },
                 "required": [
-                  "image",
-                  "data"
-                ],
-                "title": "MultiPartBodyParams",
-                "type": "object"
+                  "title",
+                  "description",
+                  "price",
+                  "stock",
+                  "image"
+                ]
               }
             }
           },
           "required": true
+        },
+        "security": [
+          {
+            "CookieJWTAuth": []
+          },
+          {
+            "RefreshCookieJWTAuth": []
+          },
+          {
+            "InitDataJWTAuth": []
+          }
+        ]
+      }
+    },
+    "/api/core/shops/{shop_id}": {
+      "get": {
+        "operationId": "core_api_define_owner_endpoint",
+        "summary": "Define Owner Endpoint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shop_id",
+            "schema": {
+              "format": "uuid",
+              "title": "Shop Id",
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreOutSchema"
+                }
+              }
+            }
+          }
         },
         "security": [
           {
@@ -319,11 +391,47 @@
         ]
       }
     },
-    "/api/core/products": {
+    "/api/core/all-shops": {
+      "get": {
+        "operationId": "core_api_list_shops_endpoint",
+        "summary": "List Shops Endpoint",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StoreOutSchema"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "GET"
+        ]
+      }
+    },
+    "/api/core/products/{shop_id}": {
       "get": {
         "operationId": "core_api_list_products_endpoint",
         "summary": "List Products Endpoint",
         "parameters": [
+          {
+            "in": "path",
+            "name": "shop_id",
+            "schema": {
+              "format": "uuid",
+              "title": "Shop Id",
+              "type": "string"
+            },
+            "required": true
+          },
           {
             "in": "query",
             "name": "limit",
@@ -426,7 +534,7 @@
     },
     "/api/auth/pair": {
       "post": {
-        "operationId": "mytoken_obtain_token_c99b5f19",
+        "operationId": "mytoken_obtain_token_a883ed9d",
         "summary": "Obtain Token",
         "parameters": [],
         "responses": {
@@ -521,6 +629,11 @@
           "logo_url": {
             "title": "Logo Url",
             "type": "string"
+          },
+          "is_owner": {
+            "default": false,
+            "title": "Is Owner",
+            "type": "boolean"
           }
         },
         "required": [
@@ -552,17 +665,6 @@
       },
       "ProductOut": {
         "properties": {
-          "price": {
-            "example": "0.00",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)",
-            "title": "Price",
-            "type": "string"
-          },
-          "shop_id": {
-            "format": "uuid",
-            "title": "Shop Id",
-            "type": "string"
-          },
           "id": {
             "anyOf": [
               {
@@ -587,6 +689,11 @@
             "title": "Описание товара",
             "type": "string"
           },
+          "price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Цена товара",
+            "type": "string"
+          },
           "stock": {
             "default": 1,
             "title": "Осталось товара",
@@ -599,11 +706,10 @@
           }
         },
         "required": [
-          "price",
-          "shop_id",
           "image",
           "title",
-          "description"
+          "description",
+          "price"
         ],
         "title": "ProductOut",
         "type": "object"

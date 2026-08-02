@@ -3,10 +3,14 @@ import { components } from "@/types/api";
 import { init } from "next/dist/compiled/webpack/webpack";
 import { config } from "process";
 import { error } from "console";
+import { ProductIn } from "@/app/shops/[shop_id]/page";
+import { UUID } from "crypto";
+
 
 
 export type TelegramUserIn = components["schemas"]["TelegramUserIn"]
 export type StoreOutSchema = components["schemas"]["StoreOutSchema"]
+export type ProductOut = components["schemas"]["ProductOut"]
 
 type SafeMethod = 'get' | 'head' | 'options';
 
@@ -124,9 +128,27 @@ export const authApi = {
         return data;
     },
 
-    my_shops: async () => {
+    get_shops: async () => {
         const { data, status} = await api.get<StoreOutSchema[]>("my-shops/");
         console.log(status);
+        return data;
+    },
+
+    get_shop_owner: async (shop_id: string) => {
+        const { data, status} = await api.get<StoreOutSchema>(`shops/${shop_id}`);
+        console.log(status);
+        return data;
+    },
+
+    get_products: async (shop_id: string) => {
+        const {data, status} = await api.get<ProductOut[]>(`shops/${shop_id}/products`);
+        console.log(status);
+        return data;
+    },
+
+    all_shops: async () => {
+        const {data, status} = await api.get<StoreOutSchema[]>("all-shops/");
+        console.log(`${status}, All stores showed`);
         return data;
     },
 
