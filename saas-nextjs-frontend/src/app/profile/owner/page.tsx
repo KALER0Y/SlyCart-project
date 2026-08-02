@@ -81,27 +81,31 @@ export default function ShopInterface() {
   }
 
   if (!data) {
-    return <div>Ошибка</div>;
+    return (
+      <div className="flex w-full items-center justify-center py-24 font-mono text-sm text-zinc-500">
+        Ошибка
+      </div>
+    );
   }
 
 
   return (
-    <div className="flex flex-col items-center justify-center text-center">
+    <div className="relative flex w-full flex-col items-center justify-center text-center">
       
       {data?.length === 0 ? (
         <>
-          <div className="mt-20 flex h-20 w-20 items-center justify-center gap-8 rounded-2xl border border-zinc-800 bg-zinc-900">
-            <Store className="h-8 w-8 text-zinc-400" />
+          <div className="mt-16 flex h-20 w-20 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 shadow-inner shadow-black/40">
+            <Store className="h-8 w-8 text-zinc-500" />
           </div>
 
-          <div className="mt-4 flex flex-col items-center justify-center gap-4 font-mono">
-            <p className="text-2xl font-bold">Пока что магазинов нет</p>
-            <p className="text-[18px] text-gray-500">
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 px-2 font-mono">
+            <p className="text-xl font-bold text-zinc-100">Пока что магазинов нет</p>
+            <p className="text-sm leading-relaxed text-zinc-500">
               Создайте свой первый магазин и начните продавать тысячам пользователей Telegram.
             </p>
 
             <Button
-              className="mt-3 rounded-[15px] bg-cyan-500 px-10 py-6 text-[18px] text-white font-bold hover:bg-cyan-600"
+              className="mt-4 h-12 rounded-xl bg-cyan-500 px-8 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition-colors hover:bg-cyan-600"
               onClick={() => setIsOpen(true)}
             >
               + Создать магазин
@@ -110,7 +114,7 @@ export default function ShopInterface() {
         </>
       ) : 
       (
-      <div>
+      <div className="w-full pb-24">
           <div className="w-full px-4 text-left font-mono">
             <h2 className="mb-4 mt-4 border-b border-zinc-800 pb-2 text-sm font-bold tracking-wider text-zinc-400 uppercase">
               Мои магазины ({data.length})
@@ -122,7 +126,7 @@ export default function ShopInterface() {
                 <Link
                   key={shop.id}
                   href={`/shops/${shop.id}`}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3 transition-all hover:border-zinc-700 hover:bg-zinc-900"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3 transition-all hover:border-zinc-700 hover:bg-zinc-900 hover:shadow-lg hover:shadow-black/30"
                 >
                   {/* Контейнер картинки */}
                   <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-zinc-800">
@@ -135,10 +139,10 @@ export default function ShopInterface() {
 
                   {/* Инфо о магазине */}
                   <div className="mt-3 flex flex-col flex-1 justify-between">
-                    <h3 className="truncate text-base font-bold text-zinc-100">
+                    <h3 className="truncate text-sm font-bold text-zinc-100">
                       {shop.name}
                     </h3>
-                    <p className="mt-1 line-clamp-2 text-xs text-zinc-400">
+                    <p className="mt-1 line-clamp-2 text-xs text-zinc-500">
                       {shop.description}
                     </p>
                   </div>
@@ -148,7 +152,7 @@ export default function ShopInterface() {
           </div>
           <div>
             <Button
-              className="absolute bottom-6 right-3 z-50 h-12 rounded-full bg-cyan-500 text-white font-bold shadow-lg"
+              className="absolute bottom-6 right-4 z-50 h-12 rounded-full bg-cyan-500 px-6 text-sm font-bold text-white shadow-lg shadow-cyan-500/30 transition-colors hover:bg-cyan-600"
               onClick={() => setIsOpen(true)}
             >
               + Создать магазин
@@ -158,23 +162,23 @@ export default function ShopInterface() {
       )
     }
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md border-zinc-800 bg-zinc-950 font-mono">
         <DialogHeader>
-          <DialogTitle>Создать магазин</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-zinc-100">Создать магазин</DialogTitle>
+          <DialogDescription className="text-zinc-500">
             Заполните данные о вашем магазине и загрузите логотип.
           </DialogDescription>
         </DialogHeader>
 
         {/* Контент формы и превью выносим отдельно от DialogHeader */}
         <div className="flex flex-col gap-4 py-2">
-          <div className="relative flex h-48 w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/40 bg-zinc-800 p-4">
+          <div className="relative flex h-40 w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/60 p-4">
             {previewUrl ? (
               <>
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full rounded-xl object-cover"
                 />
                 <Button
                   type="button"
@@ -187,22 +191,22 @@ export default function ShopInterface() {
                 </Button>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center text-center">
-                <ImageIcon className="mb-2 h-8 w-8 text-muted-foreground/60" />
-                <p className="text-sm text-muted-foreground">
-                    Choose image file below
+              <div className="flex flex-col items-center justify-center gap-1 text-center">
+                <ImageIcon className="mb-1 h-7 w-7 text-zinc-600" />
+                <p className="text-xs text-zinc-500">
+                    Выберите файл ниже
                 </p>
               </div>
             )}
           </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex flex-col">
 
           <Tabs defaultValue="url" value={activeTab} onValueChange={(val) => setActiveTab(val as "file")}>
 
             <TabsContent value="file" className="mt-2">
-              <p className="text-[13px] text-zinc-500 font-serif h-6">ЗАГРУЗИТЕ ФАЙЛ</p>
+              <p className="h-6 font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">Загрузите файл</p>
               <Input 
-                className="h-10 py-2"
+                className="h-11 p-1 file:mt-1 px-2 cursor-pointer rounded-xl border border-zinc-800 bg-zinc-900/60 text-xs text-zinc-500 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-cyan-500 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-cyan-600"
                 type="file" 
                 accept="image/*" 
                 onChange={(e) => {
@@ -217,24 +221,24 @@ export default function ShopInterface() {
           </Tabs>
 
           {/* Название магазина */}
-          <Field className="mt-5 text-zinc-500 font-serif">
-            <FieldLabel className="text-[13px]">НАЗВАНИЕ МАГАЗИНА</FieldLabel>
+          <Field className="mt-5">
+            <FieldLabel className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">Название магазина</FieldLabel>
             <Input placeholder="Например, Dark Store" 
-            className="h-10"
+            className="h-11 rounded-xl border-zinc-800 bg-zinc-900/60 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/50"
             value={name}
             onChange={(e) => setName(e.target.value)} />
           </Field>
 
-          <Field className="mt-5 text-zinc-500 font-serif">
-            <FieldLabel className="text-[13px]">ОПИСАНИЕ МАГАЗИНА</FieldLabel>
+          <Field className="mt-4">
+            <FieldLabel className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">Описание магазина</FieldLabel>
             <Input placeholder="Например, магазин цифровой техники" 
-            className="h-10"
+            className="h-11 rounded-xl border-zinc-800 bg-zinc-900/60 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/50"
             value={description}
             onChange={(e) => setDescription(e.target.value)} />
           </Field>
 
-          <Button type="submit" className="w-full flex items-center justify-center gap-2 text-white h-10 rounded-xl bg-cyan-500 font-bold hover:bg-cyan-600 mt-5">
-            <Store/>
+          <Button type="submit" className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition-colors hover:bg-cyan-600">
+            <Store className="h-4 w-4"/>
             Создать магазин
           </Button>
           </form>

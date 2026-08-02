@@ -1,10 +1,10 @@
 "use client"
-
 import { useParams } from "next/navigation"
 import { components } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner"
+
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
 import { Tabs, TabsContent} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -19,13 +20,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ImageIcon, PackagePlus, X } from "lucide-react";
 import api, { authApi } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-
 export type ProductIn = components['schemas']['ProductIn']
 
 export default function Products() {
+
     const params = useParams();
     const shopId = params.shop_id;
-
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"file">("file");
@@ -72,7 +72,6 @@ export default function Products() {
         formData.append("stock", stock)
         formData.append("is_active", String(isActive)) 
         formData.append("image", file) 
-
         // 3. Отправляем файлы
         
         await api.post(`shops/${shopId}/product`, formData, {
@@ -80,9 +79,7 @@ export default function Products() {
             'Content-Type': undefined
         }
         })
-
         toast.success("Товар успешно опубликован!")
-
         // 4. Очищаем модалку и сбрасываем формы
         setIsOpen(false); // Закрываем модалку
         setTitle("");       // Очищаем форму
@@ -93,33 +90,40 @@ export default function Products() {
         setFile(null);
         setPreviewUrl(null);
     }
-
     if (isShopLoading || isProductsLoading) {
         return (
-            <div className="flex min-h-[60vh] w-full items-center justify-center font-mono text-sm text-zinc-500">
-            Загрузка магазина...
+            <div className="w-full px-4 pt-4 font-mono">
+                <div className="mb-4 h-4 w-32 animate-pulse rounded bg-zinc-800" />
+                <div className="grid grid-cols-2 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3">
+                            <div className="aspect-square w-full animate-pulse rounded-xl bg-zinc-800" />
+                            <div className="mt-3 h-3 w-3/4 animate-pulse rounded bg-zinc-800" />
+                            <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-zinc-800/70" />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
         }
     
     return (
-        <div className="flex flex-col items-center justify-center text-center">
+        <div className="relative flex flex-col items-center justify-center text-center">
             {product?.length === 0 ? (
                 <>
                     {shop?.is_owner === true ? (
                         <>
-                            <div className="mt-20 flex h-20 w-20 items-center justify-center gap-8 rounded-2xl border border-zinc-800 bg-zinc-900">
+                            <div className="mt-16 flex h-20 w-20 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 shadow-inner shadow-black/40">
                                 {/* <p>{shopId}</p> */}
-                                <PackagePlus className="h-8 w-8 text-zinc-400" />
+                                <PackagePlus className="h-8 w-8 text-zinc-500" />
                             </div>
-                            <div className="mt-4 flex flex-col items-center justify-center gap-4 font-mono">
-                                <p className="text-2xl font-bold">Пока что товаров нет</p>
-                                <p className="text-[18px] text-gray-500">
+                            <div className="mt-6 flex flex-col items-center justify-center gap-3 px-2 font-mono">
+                                <p className="text-xl font-bold text-zinc-100">Пока что товаров нет</p>
+                                <p className="text-sm leading-relaxed text-zinc-500">
                                 Создайте свой первый товар для вашего нового магазина.
                                 </p>
-
                                 <Button
-                                className="mt-3 rounded-[15px] bg-cyan-500 px-10 py-6 text-[18px] text-white font-bold hover:bg-cyan-600"
+                                className="mt-4 h-12 rounded-xl bg-cyan-500 px-8 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition-colors hover:bg-cyan-600"
                                 onClick={() => setIsOpen(true)}
                                 >
                                 + Создать товар 
@@ -127,25 +131,25 @@ export default function Products() {
                             </div>                 
                         </> 
                     ) : (
-                    <div className="flex min-h-[60vh] w-full flex-col items-center justify-center p-6 text-center font-mono">
-                    <p className="text-base text-zinc-400 font-bold">
-                        Зайдите позже, владелец еще не добавил товары в этот магазин.
-                    </p>
+                    <div className="flex min-h-[60vh] w-full flex-col items-center justify-center gap-2 p-6 text-center font-mono">
+                        <PackagePlus className="mb-1 h-7 w-7 text-zinc-600" />
+                        <p className="text-sm font-bold text-zinc-400">
+                            Зайдите позже, владелец еще не добавил товары в этот магазин.
+                        </p>
                     </div>
                     )}
                 </>
              ) : (
-                <div className="w-full px-4 text-left font-mono mt-4">
+                <div className="w-full px-4 pb-24 text-left font-mono mt-4">
                 <h2 className="mb-4 border-b border-zinc-800 pb-2 text-sm font-bold tracking-wider text-zinc-400 uppercase">
                     Товары ({product?.length || 0})
                 </h2>
-
                 {/* Сетка товаров */}
                 <div className="grid grid-cols-2 gap-4">
                     {product?.map((product) => (
                     <div
                         key={product.id}
-                        className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3 transition-all hover:border-zinc-700 hover:bg-zinc-900"
+                        className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-3 transition-all hover:border-zinc-700 hover:bg-zinc-900 hover:shadow-lg hover:shadow-black/30"
                     >
                         {/* Картинка товара */}
                         <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-zinc-800">
@@ -155,24 +159,21 @@ export default function Products() {
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                         </div>
-
                         {/* Контент товара */}
                         <div className="mt-3 flex flex-col flex-1 justify-between">
                         <div>
-                            <h3 className="truncate text-base font-bold text-zinc-100">
+                            <h3 className="truncate text-sm font-bold text-zinc-100">
                             {product.title}
                             </h3>
-                            <p className="mt-1 line-clamp-2 text-xs text-zinc-400">
+                            <p className="mt-1 line-clamp-2 text-xs text-zinc-500">
                             {product.description}
                             </p>
                         </div>
-
                         {/* Цена и наличие */}
                         <div className="mt-3 flex items-center justify-between border-t border-zinc-800/80 pt-2">
                             <span className="text-sm font-bold text-cyan-400">
                             {product.price} ₽
                             </span>
-
                             <span className="text-[10px] text-zinc-500">
                             {product.is_active && product.stock > 0
                                 ? `В остатке: ${product.stock}`
@@ -186,7 +187,7 @@ export default function Products() {
                     <div>
                         {shop?.is_owner && (
                         <Button
-                            className="absolute bottom-6 right-3 z-50 h-12 rounded-full bg-cyan-500 text-white font-bold shadow-lg"
+                            className="absolute bottom-6 right-4 z-50 h-12 rounded-full bg-cyan-500 px-6 text-sm font-bold text-white shadow-lg shadow-cyan-500/30 transition-colors hover:bg-cyan-600"
                             onClick={() => setIsOpen(true)}
                             >
                             + Создать товар 
@@ -195,25 +196,23 @@ export default function Products() {
                     </div>
                 </div>
             ) }
-
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md border-zinc-800 bg-zinc-950 font-mono">
                         <DialogHeader>
-                        <DialogTitle>Создать товар</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-zinc-100">Создать товар</DialogTitle>
+                        <DialogDescription className="text-zinc-500">
                             Заполните данные о вашем товаре и загрузите фотографию.
                         </DialogDescription>
                         </DialogHeader>
-
                         {/* Контент формы и превью выносим отдельно от DialogHeader */}
-                        <div className="flex flex-col gap-4 py-2">
-                        <div className="relative flex h-48 w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/40 bg-zinc-800 p-4">
+                        <div className="flex flex-col gap-4 py-2 max-h-[75vh] overflow-y-auto pr-1">
+                        <div className="relative flex h-40 w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/60 p-4">
                             {previewUrl ? (
                             <>
                                 <img
                                 src={previewUrl}
                                 alt="Preview"
-                                className="h-full w-full object-cover"
+                                className="h-full w-full rounded-xl object-cover"
                                 />
                                 <Button
                                 type="button"
@@ -226,22 +225,20 @@ export default function Products() {
                                 </Button>
                             </>
                             ) : (
-                            <div className="flex flex-col items-center justify-center text-center">
-                                <ImageIcon className="mb-2 h-8 w-8 text-muted-foreground/60" />
-                                <p className="text-sm text-muted-foreground">
-                                    Choose image file below
+                            <div className="flex flex-col items-center justify-center gap-1 text-center">
+                                <ImageIcon className="mb-1 h-7 w-7 text-zinc-600" />
+                                <p className="text-xs text-zinc-500">
+                                    Выберите файл ниже
                                 </p>
                             </div>
                             )}
                         </div>
-                        <form onSubmit={handleSubmit}>
-
+                        <form onSubmit={handleSubmit} className="flex flex-col">
                         <Tabs defaultValue="url" value={activeTab} onValueChange={(val) => setActiveTab(val as "file")}>
-
                             <TabsContent value="file" className="mt-2">
-                            <p className="text-[13px] text-zinc-500 font-serif h-6">ЗАГРУЗИТЕ ФАЙЛ</p>
+                            <p className="h-6 font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">Загрузите файл</p>
                             <Input 
-                                className="h-10 py-2"
+                                className="h-11 p-1 file:mt-1 px-2 cursor-pointer rounded-xl border border-zinc-800 bg-zinc-900/60 text-xs text-zinc-500 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-cyan-500 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-cyan-600"
                                 type="file" 
                                 accept="image/*" 
                                 onChange={(e) => {
@@ -254,55 +251,59 @@ export default function Products() {
                             />
                             </TabsContent>
                         </Tabs>
-
-                        {/* Название магазина */}
-                        <Field className="mt-5 text-zinc-500 font-serif">
-                            <FieldLabel className="text-[13px]">НАЗВАНИЕ ТОВАРА</FieldLabel>
+                        {/* Название товара */}
+                        <Field className="mt-5">
+                            <FieldLabel className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">Название товара</FieldLabel>
                             <Input placeholder="Например, Iphone 17 megamax" 
-                            className="h-10"
+                            className="h-11 rounded-xl border-zinc-800 bg-zinc-900/60 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/50"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)} />
                         </Field>
-
-                        <Field className="mt-5 text-zinc-500 font-serif">
-                            <FieldLabel className="text-[13px]">ОПИСАНИЕ ТОВАРА</FieldLabel>
+                        <Field className="mt-4">
+                            <FieldLabel className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">Описание товара</FieldLabel>
                             <Input placeholder="Например, новый классный айфон" 
-                            className="h-10"
+                            className="h-11 rounded-xl border-zinc-800 bg-zinc-900/60 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/50"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)} />
                         </Field>
-
-                        <Field className="mt-5 text-zinc-500 font-serif">
-                            <FieldLabel className="text-[13px]">ЦЕНА</FieldLabel>
-                            <Input
-                                type="number"
-                                min="0"
-                                inputMode="decimal"
-                                placeholder="0.00" 
-                                className="h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                value={price}
-                                onChange={(e) => setPrice(e.target.value)} />
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                        <Field>
+                            <FieldLabel className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">Цена</FieldLabel>
+                            <div className="relative">
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    inputMode="decimal"
+                                    placeholder="0.00" 
+                                    className="h-11 rounded-xl border-zinc-800 bg-zinc-900/60 pl-7 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    value={price}
+                                    onChange={(e) => setPrice(e.target.value)} />
+                                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">₽</span>
+                            </div>
                         </Field>
-
-                        <Field className="mt-5 text-zinc-500 font-serif">
-                            <FieldLabel className="text-[13px]">КОЛИЧЕСТВО</FieldLabel>
+                        <Field>
+                            <FieldLabel className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-500">Количество</FieldLabel>
                             <Input
                                 type="number"
                                 min="0"
                                 inputMode="numeric"
                                 placeholder="1" 
-                                className="h-10 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                className="h-11 rounded-xl border-zinc-800 bg-zinc-900/60 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-cyan-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 value={stock}
                                 onChange={(e) => setStock(e.target.value)} />
                         </Field>
+                        </div>
                             
-                            <div className="flex items-center gap-3">
-                                <p className="mt-4 text-zinc-500 font-serif">Товар на продажу?</p>
-                                <Checkbox className="mt-5 text-zinc-500 font-serif h-8 w-8" checked={isActive} onCheckedChange={(checked) => setActive(Boolean(checked))}/>
+                            <div className="mt-5 flex items-center gap-3">
+                                <Checkbox 
+                                    className="h-5 w-5 rounded-md border-zinc-700 bg-zinc-900/60 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500" 
+                                    checked={isActive} 
+                                    onCheckedChange={(checked) => setActive(Boolean(checked))}
+                                />
+                                <p className="text-sm text-zinc-400">Товар на продажу?</p>
                             </div>
-
-                        <Button type="submit" className="w-full flex items-center justify-center gap-2 text-white h-10 rounded-xl bg-cyan-500 font-bold hover:bg-cyan-600 mt-5">
-                            <PackagePlus/>
+                        <Button type="submit" className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition-colors hover:bg-cyan-600">
+                            <PackagePlus className="h-4 w-4"/>
                             Опубликовать товар
                         </Button>
                         </form>

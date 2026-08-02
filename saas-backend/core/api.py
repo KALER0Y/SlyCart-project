@@ -236,7 +236,7 @@ def define_owner_endpoint(request, shop_id: uuid.UUID):
     # 1) Ищем магазин
     shop = get_object_or_404(Shop, id=shop_id)
     # 2) Проверяем является ли аутентифицированный пользователь владельцем и записываем в ОЗУ
-    shop.is_owner = (shop.owner.owner_id == request.auth.user_id)
+    shop.is_owner = (shop.owner.owner == request.auth)
     # 3) Возвращаем магазин
     return shop
 
@@ -247,9 +247,14 @@ def define_owner_endpoint(request, shop_id: uuid.UUID):
                  tags=["GET"])
 def list_my_shops_endpoint(request):
 
-    user = request.auth.user_id
+    owner = get_object_or_404(OwnerProfile, owner=request.auth)
 
-    return Shop.objects.filter(owner__owner_id=user)
+    shops = Shop.objects.filter(owner=owner)
+
+    for shop in shops:
+        shop.is_owner = True
+
+    return shops
 
 @core_router.get('/shops/{shop_id}/products', response=List[ProductOut], tags=["GET"])
 def product_list_endpoint(request, shop_id: uuid.UUID):
