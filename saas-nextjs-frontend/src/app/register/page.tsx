@@ -2,8 +2,6 @@
 import { motion, AnimatePresence} from 'framer-motion';
 import { useState, useEffect, memo } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';

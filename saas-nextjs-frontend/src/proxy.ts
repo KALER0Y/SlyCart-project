@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export const config = {
-    matcher: ["/profile/customer/:path*", "/profile/owner/:path*"]
+    matcher: ["/profile/customer/:path*", "/profile/owner/:path*", "/shops/:path*"]
 }
 
 // export мы пишем для того, чтобы функция не была "заперта" внутри этого файла и могла спокойно применятся где нам нужно
@@ -19,7 +19,7 @@ export async function proxy(request: NextRequest){
     // 2) Получаем текущий путь динамически. первый это куда хотим отправить, а второй - информация об ориджине
 
     const path = request.nextUrl.pathname
-    console.log("middleware сработал, путь:", path)
+    // console.log("middleware сработал, путь:", path)
     const register_url = new URL("/register", request.url)
 
     // 3) Если путь не /register и нет access токена, то редирект на регистрацию
@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest){
     
     try {
         const {payload} = await jwtVerify(token, secret)
-        console.log("🔑 СОДЕРЖИМОЕ ТОКЕНА PAYLOAD:", payload)
+        // console.log("🔑 СОДЕРЖИМОЕ ТОКЕНА PAYLOAD:", payload)
         const role = payload.role
 
         const customer_url = new URL("/profile/customer", request.url) 
