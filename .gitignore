@@ -10,6 +10,5 @@ Thumbs.db
 media
 seed_products.py
 saas-frontend
-migrations
 general.log
 fake_datas.txt
