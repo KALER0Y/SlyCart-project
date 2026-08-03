@@ -36,7 +36,7 @@ BOT_TOKEN = env.str('BOT_TOKEN')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool(name="DEBUG")
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['slycart-saas-project.onrender.com', 'localhost', '127.0.0.1', '*']
 
 
 # Application definition
