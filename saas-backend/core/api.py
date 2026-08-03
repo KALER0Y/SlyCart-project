@@ -25,8 +25,9 @@ from django.middleware.csrf import get_token
 from .exceptions import NegativePriceError, SignatureError
 from .utils.set_cookie import set_auth_cookie
 from .utils.initdata import verify_telegram_initdata
-from .models import OwnerProfile, Product, Shop
+from .models import CustomerProfile, OwnerProfile, Product, Shop
 from .services import (
+    create_order,
     create_user, 
     create_shop,
     create_product,
@@ -37,13 +38,16 @@ from .services import (
     InvalidRoleError
     )
 from .schemas import (
+    OrderInSchema,
     TelegramUserOut, 
     TelegramUserIn,
     StoreOutSchema,
     StoreCreateSchema,
     ProductIn,
     ProductOut,
-    ProductPatch
+    ProductPatch,
+    OrderOutSchema,
+    OrderItemInSchema
     )
 from .models import TelegramUser
 
@@ -227,6 +231,24 @@ def create_product_endpoint(request,
 
     return product
 
+@core_router.post("/orders", 
+                  auth=[CookieJWTAuth(), RefreshCookieJWTAuth(), InitDataJWTAuth()],
+                  response=OrderOutSchema,
+                  tags=["POST"])
+def create_order_endpoint(request, data: OrderInSchema):
+
+    user = request.auth
+
+    customer = get_object_or_404(CustomerProfile, customer=user)
+
+    shop = get_object_or_404(Shop, id=data.shop_id)
+
+    try:
+        order = create_order(customer=customer, shop=shop, data=data)
+        return order
+    except ValueError as e:
+        raise HttpError(400, str(e))
+
 @core_router.get("/shops/{shop_id}",
                  auth=[CookieJWTAuth(), RefreshCookieJWTAuth(), InitDataJWTAuth()],
                  response=StoreOutSchema,
@@ -294,8 +316,6 @@ def list_shops_endpoint(request):
 @paginate
 def list_products_endpoint(request, shop_id: uuid.UUID):
     return Product.objects.filter(shop_id=shop_id)
-
-# @core_router.get("/products/{shop_name}", tags=["GET"])
 
         
 

@@ -238,37 +238,6 @@ class Product(models.Model):
         return f"Товар/цена/кол-во: {self.title} : {self.price} : {self.stock}. В наличии: {self.is_active}"
 
 
-class CartItem(models.Model):
-
-    customer = models.ForeignKey(to=CustomerProfile, 
-                                 on_delete=models.CASCADE, 
-                                 verbose_name="Покупатель")
-    
-    product = models.ForeignKey(to=Product, 
-                                on_delete=models.CASCADE, 
-                                verbose_name="Товар")
-    
-    updated_at = models.DateTimeField(auto_now=True, 
-                                      verbose_name="Дата изменения заказа")
-    
-    quantity = models.PositiveSmallIntegerField(verbose_name="Количество товара",
-                                                default=1)
-
-
-    class Meta:
-        verbose_name = "Корзина"
-        verbose_name_plural = "Корзины"
-        constraints = [
-            models.UniqueConstraint( # Чтобы не было дублей в товарах, меняется только количество, покупатель и товар не меняется!
-                fields=['customer','product'],
-                name="unique_product"
-            )
-        ] 
-        
-    
-    def __str__(self):
-        return f"Покупатель {self.customer}, товар: {self.product}, кол-во: {self.quantity}"
-
 
 class Order(models.Model):
 
@@ -292,50 +261,13 @@ class Order(models.Model):
     created_at = models.DateTimeField(verbose_name="Дата создания",
                                       auto_now_add=True)
     
-    updated_at = models.DateTimeField(verbose_name="Дата обновления",
-                                      auto_now=True)
-
-    CHOICES = [
-        ("pending", "Ожидает оплаты"),
-        ("paid", "Оплачен"),
-        ("shipped", "Отправлен"),
-        ("completed", "Завершен"),
-        ("canceled", "Отменен"),
-    ]
-
-    status = models.CharField(max_length=20, 
-                              choices=CHOICES, 
-                              default='pending', 
-                              verbose_name="Статус товара")
-
     
     class Meta:
         verbose_name = "Заказ"
         verbose_name_plural = "Заказы"
 
     def __str__(self):
-        return f"Покупатель: {self.customer}, магазин: {self.shop.shop_name}, к оплате: {self.total_price}, статус: {self.status}"
-
-
-class OrderHistory(models.Model):
-
-    order = models.ForeignKey(to=Order,
-                              verbose_name="Заказ",
-                              related_name="history",
-                              on_delete=models.CASCADE) # Без самого заказа нет смысла хранить историю
-    
-    old_status = models.CharField(max_length=40,
-                              verbose_name="Статус(старый)")
-    
-    new_status = models.CharField(max_length=40,
-                                  verbose_name="Статус(новый)")
-    
-    created_at = models.DateTimeField(verbose_name="Дата изменения",
-                                      auto_now_add=True)
-    
-    class Meta:
-        verbose_name = "История заказа"
-        verbose_name_plural = "История заказов"
+        return f"Покупатель: {self.customer}, магазин: {self.shop.name}, к оплате: {self.total_price}"
 
 
 class OrderItem(models.Model):
@@ -369,28 +301,3 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"Номер заказа: {self.order.id}, кол-во: {self.quantity}, цена за штуку: {self.price_per_item}"
-
-
-class ProductImage(models.Model):
-    
-    product = models.ForeignKey(to=Product, 
-                                on_delete=models.CASCADE, 
-                                related_name="images",
-                                verbose_name="Товар")
-    
-    image = models.ImageField(verbose_name="Изображение", 
-                                upload_to="products/gallery/%Y/%m/%d/",
-                                )
-    
-    is_main = models.BooleanField(verbose_name="Главное изображение",
-                                  default=False)
-                
-    # Лучше всего методы save, delete не писать именно в базе, а в service layer
-    
-    class Meta:
-        verbose_name = "Изображение товара"
-        verbose_name_plural = "Изображения товаров"
-
-    def __str__(self):
-        return f"Фото для {self.product.title} {'(Главное)' if self.is_main else ''}"
-    

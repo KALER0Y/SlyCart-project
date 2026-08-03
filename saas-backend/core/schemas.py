@@ -1,12 +1,12 @@
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from pydantic import PositiveInt
-from uuid import UUID, uuid4
+from uuid import UUID
 from ninja import Field, Schema, ModelSchema
 from ninja_jwt.tokens import RefreshToken
 from django.db.models import Q
 from ninja.errors import HttpError
-from .models import TelegramUser, Shop, Product
+from .models import Order, TelegramUser, Product
 from enum import Enum
 
 class Roles(str, Enum):
@@ -22,25 +22,6 @@ class TelegramUserOut(ModelSchema): # Что мы будет отдавать в
     class Meta:
         model = TelegramUser
         fields = ['user_id', 'role']
-
-
-# class ShopIn(Schema):
-#     owner: int
-#     shop_name: str
-#     shop_link: str = None
-
-
-# class ShopOut(ModelSchema):
-#     # ModelSchema сделает все сама
-#     owner_id: int  # Это "дополнительное" поле для JSON
-
-#     class Meta:
-#         model = Shop
-#         fields = ['id', 'shop_name', 'shop_link'] # Здесь ТОЛЬКО реальные колонки из таблицы Shop
-
-#     @staticmethod # "Добытчик" сам все найдет и напишет
-#     def resolve_owner_id(obj):
-#         return obj.owner.owner.user_id
 
 
 class ProductIn(Schema):
@@ -82,6 +63,19 @@ class StoreOutSchema(Schema):
     description: str
     logo_url: str # В ответе всегда отдаем готовую ссылку на сохраненный файл
     is_owner: bool = False
+
+class OrderItemInSchema(Schema):
+    product_id: int
+    quantity: int = Field(..., gt=0)
+
+class OrderInSchema(Schema):
+    shop_id: UUID
+    items: List[OrderItemInSchema]
+
+class OrderOutSchema(ModelSchema):
+    class Meta:
+        model = Order
+        fields = ['id', 'shop', 'total_price', 'created_at']
 
 class MyTokenObtainPairSchema(Schema):
 

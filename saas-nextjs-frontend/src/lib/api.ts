@@ -11,6 +11,7 @@ import { UUID } from "crypto";
 export type TelegramUserIn = components["schemas"]["TelegramUserIn"]
 export type StoreOutSchema = components["schemas"]["StoreOutSchema"]
 export type ProductOut = components["schemas"]["ProductOut"]
+export type OrderIn = components['schemas']['OrderInSchema']
 
 type SafeMethod = 'get' | 'head' | 'options';
 
@@ -149,6 +150,12 @@ export const authApi = {
     all_shops: async () => {
         const {data, status} = await api.get<StoreOutSchema[]>("all-shops/");
         console.log(`${status}, All stores showed`);
+        return data;
+    },
+
+    create_order: async (order: OrderIn) => {
+        const {data, status} = await api.post<OrderIn>("/orders", order);
+        console.log(`${status}, order created successfully`)
         return data;
     },
 

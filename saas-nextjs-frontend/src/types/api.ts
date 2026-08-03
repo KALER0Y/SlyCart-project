@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/core/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Order Endpoint */
+        post: operations["core_api_create_order_endpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/core/shops/{shop_id}": {
         parameters: {
             query?: never;
@@ -219,7 +236,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Obtain Token */
-        post: operations["mytoken_obtain_token_a883ed9d"];
+        post: operations["mytoken_obtain_token_a7263d8c"];
         delete?: never;
         options?: never;
         head?: never;
@@ -315,6 +332,46 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+        };
+        /** OrderOutSchema */
+        OrderOutSchema: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Магазин
+             * Format: uuid
+             */
+            shop: string;
+            /**
+             * Общая цена
+             * @default 0
+             */
+            total_price: string;
+            /**
+             * Дата создания
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** OrderInSchema */
+        OrderInSchema: {
+            /**
+             * Shop Id
+             * Format: uuid
+             */
+            shop_id: string;
+            /** Items */
+            items: components["schemas"]["OrderItemInSchema"][];
+        };
+        /** OrderItemInSchema */
+        OrderItemInSchema: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Quantity */
+            quantity: number;
         };
         /** ProductPatch */
         ProductPatch: {
@@ -473,6 +530,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+        };
+    };
+    core_api_create_order_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderInSchema"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderOutSchema"];
                 };
             };
         };
@@ -688,7 +769,7 @@ export interface operations {
             };
         };
     };
-    mytoken_obtain_token_a883ed9d: {
+    mytoken_obtain_token_a7263d8c: {
         parameters: {
             query?: never;
             header?: never;

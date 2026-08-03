@@ -15,7 +15,7 @@ import { Tabs, TabsContent} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import api from "@/lib/api"
 
@@ -24,6 +24,7 @@ import Link from "next/link";
 
 export default function ShopInterface() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const queryClient = useQueryClient();
 
 // Временные состояния для демонстрации работы превью
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -77,6 +78,8 @@ export default function ShopInterface() {
     setDescription("");
     setFile(null);
     setPreviewUrl(null);
+
+    queryClient.invalidateQueries({queryKey: ['myshops']})
 
   }
 

@@ -202,6 +202,49 @@
         ]
       }
     },
+    "/api/core/orders": {
+      "post": {
+        "operationId": "core_api_create_order_endpoint",
+        "summary": "Create Order Endpoint",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderOutSchema"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "POST"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderInSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "CookieJWTAuth": []
+          },
+          {
+            "RefreshCookieJWTAuth": []
+          },
+          {
+            "InitDataJWTAuth": []
+          }
+        ]
+      }
+    },
     "/api/core/shops/{shop_id}": {
       "get": {
         "operationId": "core_api_define_owner_endpoint",
@@ -534,7 +577,7 @@
     },
     "/api/auth/pair": {
       "post": {
-        "operationId": "mytoken_obtain_token_a883ed9d",
+        "operationId": "mytoken_obtain_token_a7263d8c",
         "summary": "Obtain Token",
         "parameters": [],
         "responses": {
@@ -755,6 +798,86 @@
           "stock"
         ],
         "title": "ProductIn",
+        "type": "object"
+      },
+      "OrderOutSchema": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "shop": {
+            "format": "uuid",
+            "title": "Магазин",
+            "type": "string"
+          },
+          "total_price": {
+            "default": 0,
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Общая цена",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Дата создания",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shop",
+          "created_at"
+        ],
+        "title": "OrderOutSchema",
+        "type": "object"
+      },
+      "OrderInSchema": {
+        "properties": {
+          "shop_id": {
+            "format": "uuid",
+            "title": "Shop Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderItemInSchema"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "shop_id",
+          "items"
+        ],
+        "title": "OrderInSchema",
+        "type": "object"
+      },
+      "OrderItemInSchema": {
+        "properties": {
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "exclusiveMinimum": 0,
+            "title": "Quantity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity"
+        ],
+        "title": "OrderItemInSchema",
         "type": "object"
       },
       "ProductPatch": {

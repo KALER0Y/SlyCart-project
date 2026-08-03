@@ -20,15 +20,17 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Checkbox } from "@/components/ui/checkbox"
 import { ImageIcon, PackagePlus, X, ArrowLeft, ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
 import api, { authApi } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type ProductIn = components['schemas']['ProductIn']
 export type ProductOut = components['schemas']['ProductOut']
+export type OrderIn = components['schemas']['OrderInSchema']
 
 export default function Products() {
     const params = useParams();
     const router = useRouter();
     const shopId = params.shop_id;
+    const queryClient = useQueryClient();
 
     // Состояния создания товара
     const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -102,10 +104,30 @@ export default function Products() {
         0
     );
 
-    const handleCheckout = () => {
-        toast.success("Заказ оформлен!");
-        setCart([]);
-        setIsCartOpen(false);
+    const handleCheckout = async () => {
+        try{
+
+            const order: OrderIn = {
+                shop_id: shopId as string,
+                items: cart.map((item) => ({
+                    product_id: String(item.product.id),
+                    quantity: item.quantity,
+                })),
+            };
+
+            console.log("Содержимое корзины", cart)
+    
+            await authApi.create_order(order)
+    
+            toast.success("Заказ оформлен!");
+            setCart([]);
+            setIsCartOpen(false);
+            
+            queryClient.invalidateQueries({ queryKey: ['products', shopId] })
+        } catch(error) {
+            toast.error("Не удалось оформить заказ")
+        };
+
     };
 
     const handleSubmit = async (e: React.SubmitEvent) => {
@@ -332,6 +354,7 @@ export default function Products() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-6 w-6 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                            disabled={item.quantity >= item.product.stock}
                                             onClick={() => updateQuantity(item.product.id, 1)}
                                         >
                                             <Plus className="h-3 w-3" />
