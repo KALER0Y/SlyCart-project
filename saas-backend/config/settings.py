@@ -157,12 +157,16 @@ CORS_ALLOW_ALL_ORIGINS = False # Запрещаем доступ всем под
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000", # Адрес фронтенда
+    "http://127.0.0.1:3000",
+    "https://sly-cart-saas-project.vercel.app",
+    "https://slycart-saas-project.onrender.com",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://sly-cart-saas-project.vercel.app",
+    "https://slycart-saas-project.onrender.com",
 ]
 
 CSRF_COOKIE_NAME = 'csrf_token'
