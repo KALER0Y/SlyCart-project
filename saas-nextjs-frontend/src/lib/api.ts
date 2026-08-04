@@ -87,16 +87,16 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     // Ошибка (reject) — что-то сломалось.
 });
 
-const retriedRequests = new Set<string>();
 
 api.interceptors.response.use(
     (response) => response, // Если ошибки нет и все четко, не изменяем ответ
     async (error: AxiosError) => {
-        const originalRequest = error.config; // Работает для всех 
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean}; // Работает для всех 
 
-        if (error.response?.status == 401 && originalRequest?.url == "/me" && !retriedRequests.has("/me")){ // Но проверку делаем только для me и только если ошибка была 401
+        if (error.response?.status == 401 && originalRequest?.url == "/me" && !originalRequest._retry){ // Но проверку делаем только для me и только если ошибка была 401
             // Если бы не было проверки на адрес, код ниже скорее всего не решал бы нашу проблему и водил по кругу
-            retriedRequests.add("/me")
+            originalRequest._retry = true;
+
             try{
                 await api.get("/refresh") // Идем туда, обновляем токен и куки
                 return api(originalRequest)// Делаем запросу туда же, но с новыми куками
@@ -109,8 +109,6 @@ api.interceptors.response.use(
                 } catch (error){
                     return Promise.reject({ needsRegister: true }) // Если ничего не прошло, значит, ручная регистрация от пользователя пользователя.
                 }
-            } finally {
-                retriedRequests.delete("/me") 
             }
         }
         return Promise.reject(error);

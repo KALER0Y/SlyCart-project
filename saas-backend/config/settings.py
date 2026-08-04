@@ -18,8 +18,6 @@ from datetime import timedelta
 from corsheaders.defaults import default_headers
 
 
-
-
 env: Env = Env()
 env.read_env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -187,7 +185,9 @@ SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
 NINJA_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'CSRF_PROTECT': False
+    'CSRF_PROTECT': False,
+    'AUTH_COOKIE_SAMESITE': 'None',
+    'AUTH_COOKIE_SECURE': True,
 }
 
 LOGGING = {
@@ -215,5 +215,8 @@ LOGGING = {
     },
 }
 
-SESSION_COOKIE_SAMESITE = "Lax"  # или "None", если нужно строго cross-site
-CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
