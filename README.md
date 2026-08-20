@@ -1,145 +1,200 @@
-# 🚀 SlyCart: Telegram SaaS CRM
+# 🚀 SlyCart: Telegram SaaS E-Commerce CRM & Marketplace
 
-SlyCart is a comprehensive SaaS solution designed for merchants to manage their brands and shops directly through Telegram. It features a robust Django-based backend, a modern Next.js frontend, and a dedicated Telegram bot for seamless interaction.
+**SlyCart** — это современная, отказоустойчивая SaaS-платформа и Telegram Mini App (TMA) E-Commerce Маркетплейс, разработанная для мерчантов и владельцев брендов. Продукт позволяет создавать персональные интернет-магазины, управлять каталогами товаров, обрабатывать заказы и автоматизировать продажи напрямую внутри экосистемы Telegram.
 
-## 🌟 Key Features
+Проект объединяет мощный высокопроизводительный бэкенд на Django Ninja, интерактивный веб-интерфейс на Next.js 15 и отзывчивого Telegram-бота для бесшовного пользовательского опыта.
 
-*   **Telegram-Native Authentication:** Registration and identification via Telegram ID (currently manual input on the backend; migration to signed `initData` validation is planned).
-*   **Multi-Tenant SaaS Architecture (API-level):** Data models and API support for "Owners" managing multiple brands and points of sale (Shops).
-*   **Access Filtering (API-level):** Multi-level filtering (`shop -> owner -> user`) implemented in the API layer to scope content per user.
-*   **Product Catalog (API-level):** Models and endpoints for products with categories, images, and stock tracking.
-*   **Order System (API-level):** Models and endpoints for order lifecycle with status tracking and change history.
-*   **Tariff & Subscription Management (API-level):** Tier-based limits for shops and products.
-*   **Type-Safe API:** Powered by Django Ninja with full Pydantic schema validation.
-*   **Decimal Precision for Finances:** Using the `Decimal` field instead of float for currency rates and prices, eliminating floating-point rounding errors.
-*   **Role-Based Redirects:** Next.js middleware reads session cookies and redirects users based on role.
-*   **Telegram Bot (prototype):** Basic Aiogram 3.x bot, currently being reworked.
+---
 
-> **Note:** Backend/API layer is functional and covers the core business logic. Frontend (Next.js) is under active development — most screens are not yet implemented.
+## 🌟 Ключевые Фичи и Инженерные Решения (Key Features)
 
-## 🛠 Tech Stack
+Архитектура SlyCart спроектирована с упором на безопасность, масштабируемость и консистентность данных. Ниже приведены ключевые технические и продуктовые решения проекта:
 
-### Backend & API
-- ![Python](https://img.shields.io/badge/Python-3.10+-brightgreen?style=flat&logo=python)
-- ![Django](https://img.shields.io/badge/Django-5.0+-brightgreen?style=flat&logo=django)
-- ![Django Ninja](https://img.shields.io/badge/Django_Ninja-Fast_API_Alternative-brightgreen)
-- ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=flat&logo=postgresql)
+### 🔐 Безопасность и Авторизация
+*   **Валидация Telegram `initData`:** На бэкенде реализована надежная криптографическая проверка подписи `initData` от Telegram Web App (SHA256 HMAC с использованием `WebAppData` и токена бота в качестве ключа). Реализована защита от Replay-атак через валидацию времени жизни (`auth_date`) и безопасный парсинг JSON-данных.
+*   **Двухуровневая JWT-аутентификация в HttpOnly Cookies:** Авторизация построена на базе `django-ninja-jwt`. Токены (`access` и `refresh`) сохраняются в безопасных `HttpOnly`, `Secure`, `SameSite=None` куках, что исключает XSS-атаки.
+*   **Кастомная ротация и блэклистинг токенов:** Эндпоинт `/refresh` автоматически инвалидирует использованные refresh-токены через механизм черных списков (Blacklisting), предотвращая повторное использование украденных сессий.
+*   **Собственная CSRF-защита (Middleware):** Кастомный `CSRFTokenMiddleware` защищает изменяющие состояние методы (`POST`, `PUT`, `DELETE`, `PATCH`). Он сверяет `csrf_token` из Cookie со специальным заголовком `X-CSRF-Token` в запросе, обеспечивая высокий уровень защиты от CSRF-атак в кросс-доменной среде.
 
-### Frontend
-- ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)
-- ![React](https://img.shields.io/badge/React-18-blue?style=flat&logo=react)
-- ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat&logo=typescript)
-- ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-blue?style=flat&logo=tailwindcss)
+### 🗄 Проектирование БД и Оптимизация (PostgreSQL)
+*   **Многоарендная архитектура (Multi-Tenant SaaS):** База данных построена по иерархическому принципу разделения прав доступа: `TelegramUser` ➔ `OwnerProfile` / `CustomerProfile` ➔ `Shop` ➔ `Product` ➔ `Order`. Каждому магазину присваивается глобально уникальный `UUID`.
+*   **Индексы для оптимизации поиска (Database Indexing):** Модель `Product` снабжена составными индексами (`goods_in_stock_idx` на поля `shop, is_active` и `sorted_prices_idx` на `shop, price`), что гарантирует моментальный рендеринг каталога и сортировку цен при миллионах записей.
+*   **Финансовая точность (Decimal Precision):** Для цен товаров и сумм заказов используется тип данных `Decimal` (`DecimalField` с 10 знаками всего и 2 знаками после запятой). Это полностью исключает накопление погрешностей округления, характерных для чисел с плавающей точкой (`float`).
 
-### Telegram Integration
-- ![Aiogram](https://img.shields.io/badge/Aiogram-3.x-blue?style=flat&logo=telegram)
+### ⚙️ Бизнес-Логика и Транзакции
+*   **Атомарные транзакции (Race Condition Defense):** Процесс оформления заказа в `create_order` полностью обернут в `transaction.atomic()`. Списание остатков на складе и создание записей `OrderItem` происходит единым неделимым блоком. Если товара недостаточно, транзакция откатывается, гарантируя целостность данных склада.
+*   **Гибкая обработка медиафайлов:** Интегрирована автоматическая генерация уникальных UUID-имен для загружаемых логотипов магазинов и изображений товаров, исключающая коллизии имен файлов в хранилище.
 
-### Infrastructure
-- ![Docker](https://img.shields.io/badge/Docker-Enabled-blue?style=flat&logo=docker)
+### 🤖 Интеграции и Асинхронность (Celery & Redis)
+*   **Telegram-бот на Aiogram 3.x:** Полностью асинхронный бот с модульной структурой хэндлеров, валидацией конфигурации через `environs` и кастомными callback-данными (`CallbackData`) для управления тарифами и навигации в меню.
+*   **Фоновые задачи и Кэширование (Celery & Redis):** Архитектура предусматривает интеграцию Celery для тяжелых фоновых задач (рассылка уведомлений клиентам об изменении статуса заказа, выгрузка аналитики) и Redis/Valkey для кэширования частых запросов к каталогу товаров и сессиям.
 
-## 🏗 Project Structure
+---
+
+## 🛠 Технологический Стек (Tech Stack)
+
+| Категория | Технологии |
+| :--- | :--- |
+| **Backend** | Python 3.12, Django 6.0, Django Ninja (быстрая Pydantic-валидация), Django Ninja JWT, django-phonenumber-field |
+| **Frontend** | React 18, Next.js 15 (App Router, Middleware для ролевых редиректов), TypeScript, Tailwind CSS, Telegram WebApp API |
+| **Database & Caching** | PostgreSQL 15, SQLite (для локальных тестов), Redis / Valkey (планируется) |
+| **Async & Tasks** | Aiogram 3.x, Celery (очереди задач) |
+| **DevOps & Infrastructure** | Docker, Docker Compose, Gunicorn, Nginx, Linux |
+
+---
+
+## 🏗 Архитектура и Структура Проекта (Project Structure)
 
 ```
-.
-├── bot/                     # Aiogram-based Telegram bot
-├── saas-backend/            # Django Ninja backend API
-│   ├── config/              # Project settings and API routing
-│   └── core/                # Core business logic and models
-├── saas-nextjs-frontend/    # Next.js web dashboard
-├── docs/                    # Documentation and assets
-├── docker-compose.yml       # Infrastructure orchestration
-└── requirements.txt         # Python dependencies
+SlyCart-Saas-project/
+├── bot/                         # Асинхронный Telegram-бот на Aiogram 3.x
+│   ├── config/                  # Загрузка и валидация конфигурации бота
+│   ├── handlers/                # Обработчики команд и callback-запросов (меню, магазин)
+│   ├── keyboards/               # Инлайновые и реплай клавиатуры, CallbackData-схемы
+│   ├── lexicons/                # Текстовые шаблоны и словари локализации
+│   └── main.py                  # Точка входа для запуска бота
+├── saas-backend/                # Бэкенд-API на Django Ninja
+│   ├── config/                  # Настройки Django проекта, маршрутизация API, WSGI/ASGI
+│   └── core/                    # Ядро бизнес-логики приложения
+│       ├── migrations/          # Миграции базы данных PostgreSQL
+│       ├── utils/               # Утилиты (валидация initData, управление COOKIE)
+│       ├── exceptions.py        # Кастомные бизнес-исключения проекта
+│       ├── middleware.py        # CSRF-проверка для API-запросов
+│       ├── models.py            # Декларативные Django-модели (User, Shop, Product, Order)
+│       ├── schemas.py           # Pydantic-схемы для сериализации и валидации
+│       ├── services.py          # Сервисный слой (транзакции, создание пользователей, заказов)
+│       └── tests/               # Модульные и интеграционные тесты (Pytest)
+├── saas-nextjs-frontend/        # Веб-панель управления на Next.js 15
+│   ├── src/                     # Компоненты, хуки, страницы, middleware авторизации
+│   └── public/                  # Статические ресурсы (изображения, иконки)
+├── docker-compose.yml           # Оркестрация контейнеров (БД PostgreSQL)
+├── pytest.ini                   # Конфигурация тестового окружения
+├── requirements.txt             # Зависимости Python
+└── .env.example                 # Шаблон файла конфигурации окружения
 ```
 
-## 📊 Database Schema
+---
 
-The project follows a strict hierarchy to ensure data integrity and security:
-- **TelegramUser**: Central identity linked to Telegram ID.
-- **OwnerProfile**: Business profile for merchants (INN, brand details).
-- **Shop**: Individual storefronts owned by a merchant.
-- **Product**: Goods listed within a specific shop.
-- **Order**: Customer transactions with detailed history tracking.
+## 🚀 Инструкция по локальному запуску (Quick Start)
 
-![Database Schema](./docs/db-schema.png)
+### Предварительные требования
+*   Установленный **Python 3.10+**
+*   Установленный **Node.js 18+** и менеджер пакетов `npm`
+*   Установленный **Docker & Docker Compose**
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- Docker & Docker Compose
-- PostgreSQL (if not using Docker)
+### Вариант 1. Запуск базы данных через Docker (Быстрый старт)
 
-### Installation
+1. **Клонируйте репозиторий:**
+   ```bash
+   git clone https://github.com/MAPATC/SlyCart-Saas-project.git
+   cd SlyCart-Saas-project
+   ```
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/MAPATC/SlyCart-Saas-project.git
-    cd SlyCart-Saas-project
-    ```
+2. **Настройте переменные окружения:**
+   ```bash
+   cp .env.example .env
+   ```
+   *Заполните переменные в созданном файле `.env` (см. раздел "Настройки Окружения" ниже).*
 
-2.  **Environment Setup:**
-    Create a `.env` file in the root based on `.env.example`:
-    ```bash
-    cp .env.example .env
-    ```
-    Fill in your `BOT_TOKEN` and `SECRET_KEY`.
+3. **Запустите PostgreSQL в Docker-контейнере:**
+   ```bash
+   docker-compose up -d
+   ```
+   *Контейнер развернет базу данных на порту `5433` (чтобы не конфликтовать со стандартным `5432` на вашей машине).*
 
-3.  **Spin up the Database (Docker):**
-    ```bash
-    docker-compose up -d
-    ```
+---
 
-### Backend Setup
-1.  **Create a virtual environment:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # Windows: venv\Scripts\activate
-    ```
-2.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  **Run migrations:**
-    ```bash
-    cd saas-backend
-    python manage.py migrate
-    ```
-4.  **Start the server:**
-    ```bash
-    python manage.py runserver
-    ```
+### Вариант 2. Ручной локальный запуск компонентов
 
-### Frontend Setup
-1.  **Navigate to the frontend directory:**
-    ```bash
-    cd saas-nextjs-frontend
-    ```
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-3.  **Start the development server:**
-    ```bash
-    npm run dev
-    ```
-
-### Telegram Bot Setup
-1.  **Navigate to the bot directory:**
-    ```bash
-    cd bot
-    ```
-2.  **Run the bot:**
-    ```bash
-    python main.py
-    ```
-
-## 🧪 Testing
-
-Run backend tests using pytest:
+#### 1. Запуск Бэкенда (Django Ninja)
+Перейдите в папку с бэкендом, настройте виртуальное окружение и запустите сервер:
 ```bash
+# Создание и активация venv
+python -m venv venv
+source venv/bin/activate  # Для Windows: venv\Scripts\activate
+
+# Установка зависимостей
+pip install -r requirements.txt
+
+# Выполнение миграций базы данных
+cd saas-backend
+python manage.py migrate
+
+# Создание суперпользователя (для доступа к Django Admin)
+python manage.py createsuperuser
+
+# Запуск сервера разработки
+python manage.py runserver
+```
+Бэкенд будет доступен по адресу: `http://127.0.0.1:8000`.
+Документация Swagger/OpenAPI доступна по адресу: `http://127.0.0.1:8000/api/docs`.
+
+#### 2. Запуск Фронтенда (Next.js)
+Откройте новое окно терминала и выполните следующие команды:
+```bash
+cd saas-nextjs-frontend
+npm install
+npm run dev
+```
+Фронтенд запустится на: `http://localhost:3000`.
+
+#### 3. Запуск Telegram-бота (Aiogram)
+Откройте новое окно терминала, убедитесь, что виртуальное окружение активно, и запустите бота:
+```bash
+cd bot
+python main.py
+```
+
+---
+
+## 🧪 Запуск Тестов
+
+В проекте настроена среда тестирования `pytest` для Django. Для запуска тестов выполните в корневой папке проекта:
+```bash
+export PYTHONPATH=$PYTHONPATH:$(pwd)/saas-backend
 pytest
 ```
 
-## 📽 Developer Diary
-Follow the project development on YouTube: [SlyCart Dev Diary](https://www.youtube.com/@saas_telega)
+---
+
+## ⚙️ Настройки Окружения (Environment Variables)
+
+Для работы приложения необходимо создать файл `.env` в корневой директории. Шаблон переменных представлен в файле `.env.example`:
+
+```env
+# Токен вашего Telegram-бота, полученный от @BotFather
+BOT_TOKEN=your_bot_token_here
+
+# Уровень логирования (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=DEBUG
+LOG_FORMAT="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Секретный ключ Django для криптографических подписей и сессий
+SECRET_KEY=your_secret_key_here
+
+# Флаг режима отладки (True для разработки, False для продакшна)
+DEBUG=True
+
+# Параметры подключения к базе данных PostgreSQL
+DATABASE_URL=postgres://crm_user:crm_password_2026@localhost:5433/crm_database
+DB_NAME=crm_database
+DB_USER=crm_user
+DB_PASSWORD=crm_password_2026
+DB_HOST=localhost
+DB_PORT=5433
+```
+
+### Подробное описание ключевых переменных:
+*   `BOT_TOKEN`: Обязателен для работы асинхронного бота и проверки `initData` от Telegram WebApp.
+*   `SECRET_KEY`: Используется Django для обеспечения безопасности сессий, хэширования паролей и генерации JWT токенов.
+*   `DATABASE_URL`: Строка подключения к PostgreSQL. Если переменная задана, проект автоматически использует её, в противном случае соединение настраивается через отдельные переменные `DB_*`.
+*   `DEBUG`: Влияет на отображение подробных ошибок бэкенда, а также отключает валидацию срока годности initData Telegram WebApp (упрощает локальное тестирование устаревших query-строк).
+
+---
+
+## 📽 Дневник Разработки (SlyCart Dev Diary)
+
+Следите за развитием проекта, архитектурными разборами и лайв-кодингом на нашем YouTube-канале:
+📺 **[SlyCart Dev Diary (YouTube)](https://www.youtube.com/@saas_telega)**
